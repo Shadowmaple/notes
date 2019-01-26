@@ -1,5 +1,8 @@
 # crontab
 
+
+修改默认编辑器：`select-editor`
+
 ## 基本指令
 
 	crontab -l
