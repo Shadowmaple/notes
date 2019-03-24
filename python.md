@@ -37,7 +37,7 @@
 + datetime.now	本地时间
 + datetime.utcnow	世界时间
 
-## python中if-else的简洁写法
+# python中if-else的简洁写法
 
 第一种：普通写法
 ```
