@@ -25,11 +25,11 @@ hexo deploy
 ```
 
 ##参考文档
-https://www.jianshu.com/p/bc241b15145d
-https://www.jianshu.com/p/f2285d63b3a8
-https://blog.csdn.net/u010725842/article/details/80672739
-[官方文档](https://hexo.io/zh-cn/docs/)
-https://blog.smackgg.cn/2015/05/25/newHexo/
-[【持续更新】最全Hexo博客搭建+主题优化+插件配置+常用操作+错误分析](https://www.simon96.online/2018/10/12/hexo-tutorial/)
-[针对github权限导致hexo部署失败的解决方案](http://www.cnblogs.com/xsilence/p/6001938.html)
-[Hexo-NexT配置超炫网页效果](https://www.jianshu.com/p/9f0e90cc32c2)
++ [官方文档](https://hexo.io/zh-cn/docs/)
++ [Linux下使用hexo搭建个人博客并托管到github](https://www.jianshu.com/p/bc241b15145d)
++ [在github上搭建hexo个人博客（Linux-Ubuntu）](https://www.jianshu.com/p/f2285d63b3a8)
++ [Linux下使用Hexo搭建github博客](https://blog.csdn.net/u010725842/article/details/80672739)
++ [搭建你的Hexo博客](https://blog.smackgg.cn/2015/05/25/newHexo/)
++ [【持续更新】最全Hexo博客搭建+主题优化+插件配置+常用操作+错误分析](https://www.simon96.online/2018/10/12/hexo-tutorial/)
++ [针对github权限导致hexo部署失败的解决方案](http://www.cnblogs.com/xsilence/p/6001938.html)
++ [Hexo-NexT配置超炫网页效果](https://www.jianshu.com/p/9f0e90cc32c2)
