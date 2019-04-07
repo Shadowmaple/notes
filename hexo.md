@@ -1,3 +1,29 @@
+# hexo
+
+## 安装npm
+[安装失败问题](https://blog.csdn.net/cc18868876837/article/details/81542282)
+```
+//查看配置
+npm config list
+//换源
+sudo npm config set registry https://registry.npm.taobao.org
+//安装
+sudo apt-get install npm
+```
+
+## 安装hexo
+```
+npm install -g hexo-cli
+```
+
+##执行命令
+建议每次都按照如下步骤部署
+```
+hexo clean
+hexo generate
+hexo deploy
+```
+
 ##参考文档
 https://www.jianshu.com/p/bc241b15145d
 https://www.jianshu.com/p/f2285d63b3a8
