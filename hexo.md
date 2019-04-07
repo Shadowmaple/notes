@@ -16,7 +16,7 @@ sudo apt-get install npm
 npm install -g hexo-cli
 ```
 
-##执行命令
+## 执行命令
 建议每次都按照如下步骤部署
 ```
 hexo clean
@@ -24,7 +24,7 @@ hexo generate
 hexo deploy
 ```
 
-##参考文档
+## 参考文档
 + [官方文档](https://hexo.io/zh-cn/docs/)
 + [Linux下使用hexo搭建个人博客并托管到github](https://www.jianshu.com/p/bc241b15145d)
 + [在github上搭建hexo个人博客（Linux-Ubuntu）](https://www.jianshu.com/p/f2285d63b3a8)
