@@ -1,4 +1,4 @@
-# MysqlNotes
+# MySQLNotes
 
 # Content
 + 了解数据库
