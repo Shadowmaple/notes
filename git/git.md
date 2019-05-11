@@ -18,3 +18,19 @@ $ sudo /etc/init.d/networking restart
 
 # git pull 提示拉取成功，但本地代码却没有拉下来，没有更新
 git stash 将本地修改储存起来，然后再Git pull 就可以了呢
+
+# 修改git链接的url地址
+在仓库根目录下进入`.git/config`文件，修改 url 即可
+```
+[core]
+    repositoryformatversion = 0
+    filemode = true
+    bare = false
+    logallrefupdates = true
+[remote "origin"]
+    url = https://github.com/Shadowmaple/notes
+    fetch = +refs/heads/*:refs/remotes/origin/*
+[branch "master"]
+    remote = origin
+    merge = refs/heads/master
+```
