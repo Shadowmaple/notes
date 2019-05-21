@@ -37,6 +37,23 @@
 + datetime.now	本地时间
 + datetime.utcnow	世界时间
 
+## assert 断言
+格式 ： `assert 判断语句, “报错语句”`
+```python
+>>> assert 1>4, "error"     # 错误报错，输出错误语句
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+AssertionError: error
+>>> assert 1<3, "error"     # 正确则不输出
+>>>
+```
+## hasattr()
+用于判断对象是否包含对应的属性。
+
+用法：`hasattr(object, name)`
+
+如果对象有该属性，则返回True，反之相反
+
 # python中if-else的简洁写法
 
 第一种：普通写法

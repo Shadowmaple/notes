@@ -4,6 +4,9 @@
 	+ getpass模块
 	+ encoded
 	+ dir()
+	+ datetime
+	+ assert
+	+ hasattr
 + python中if-else的简洁写法
 
 
