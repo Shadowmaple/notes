@@ -37,7 +37,15 @@ $ gzip -9v example.md
 
 
 
+使用 zcat, zmore, zless 可以读取被压缩后的压缩文件的纯文本内容。使用 zgrep 可以在压缩文件中查找纯文本内的关键字。
+
+```shell
+$ zgrep "vim" example.md.gz
+```
+
 ## bzip2
+
+
 
 ## xz
 
