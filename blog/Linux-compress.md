@@ -1,5 +1,21 @@
 # Linux的文件压缩
 
+# 常见的压缩命令
+
+| 扩展名    | 压缩软件                     |
+| :-------- | ---------------------------- |
+| *.Z       | compress 软件                |
+| *.zip     | zip程序                      |
+| *.gz      | gzip程序                     |
+| *.bz2     | bzip2程序                    |
+| *.xz      | xz 程序                      |
+| *.tar     | tar程序打包的文件，未压缩    |
+| *.tar.gz  | tar程序打包，并经过gzip压缩  |
+| *.tar.bz2 | tar程序打包，并经过bzip2压缩 |
+| *.tar.xz  | tar程序打包，并经过xz压缩    |
+
+其中 compress 已基本弃用，而zip是为了支持windows而出现的，在linux中使用的也就之后的几个压缩命令。
+
 # 文件压缩
 
 在现在的linux中，常用的单个文件压缩软件有gzip，bzip2和xz，就压缩比而言，gzip < bzip2 < xz，但相对的，压缩时间 gzip < bzip2 < xz。 
