@@ -48,7 +48,9 @@ type User struct {
 }
 ```
 
+可以看到上面的每个字段后面跟的映射存储类型为bson，bson是 一种二进制的json（Binary JSON），主要用在MongoDB之中。
 
+看下Mongo官方对bson的解释：
 
 > Before we start sending queries to the database, it's important to understand how the Go Driver works with BSON objects. JSON documents in MongoDB are stored in a binary representation called BSON (Binary-encoded JSON). Unlike other databases that store JSON data as simple strings and numbers, the BSON encoding extends the JSON representation to include additional types such as int, long, date, floating point, and decimal128. This makes it much easier for applications to reliably process, sort, and compare data.
 
