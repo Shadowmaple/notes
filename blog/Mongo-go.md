@@ -1,4 +1,4 @@
-# Mongo的Go驱动使用
+# Mongo-go驱动的使用
 
 # 认识
 
@@ -144,7 +144,11 @@ if modifyResult, err := collection.ReplaceOne(
 
 更新和替换的区别很好理解，更新是对原有文档的某些字段进行修改，而替换则是对整个文档的取代。
 
-`UpdateOne`和`UpdateMany`的更新值必须要有`$`，作为更新的行为，以上的例子是`set`设置，还有递增一的`iner`
+`UpdateOne`和`UpdateMany`的更新值必须要有`$`，作为更新的行为，以上的例子是`set`设置，还有对数字增减的`iner`、删除键的`unset`等等，更多请google “MongoDB的修改器”。
+
+> [MongoDB官方的Update operators](https://docs.mongodb.com/manual/reference/operator/update/)
+>
+> [MongoDB数据库更新操作的十种修改器的使用](https://blog.csdn.net/You_are_my_dream/article/details/57415880)
 
 
 
