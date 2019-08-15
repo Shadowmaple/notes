@@ -28,8 +28,7 @@ clientOptions := options.Client().ApplyURI(mongodbUrl)
 
 client, err := mongo.Connect(context.TODO(), clientOptions)
 if err != nil {
-	fmt.Println("Failed")
-    log.Fatal(err)
+	log.Fatal(err)
 }
 
 // 连接集合
@@ -42,9 +41,9 @@ collection := client.Database("table").Collection("test")
 
 ```go
 type User struct {
-	Name 	string	`bson:"name"`
+	Name	string	`bson:"name"`
 	Sex		string	`bson:"sex"`
-	Age 	int 	`bson:"age"`
+	Age		int 	`bson:"age"`
 }
 ```
 
@@ -310,3 +309,14 @@ id := primitive.NewObjectID()
 
 
 
+# 参考链接
+
++ [官方的demo](https://github.com/mongodb/mongo-go-driver/blob/master/examples/documentation_examples/examples.go)
+
++ [官方简单教程](https://www.mongodb.com/blog/post/mongodb-go-driver-tutorial)
+
++ [demo](https://github.com/hwholiday/learning_tools/blob/master/mongodb/mongo-go-driver/main.go)
+
++ [MongoDB官方推出的Go驱动库“mongo-go-driver”快速教程](https://zh.shellman.me/articles/mongo-go-driver-demo/)
+
+  
