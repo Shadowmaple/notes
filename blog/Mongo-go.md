@@ -28,7 +28,7 @@ clientOptions := options.Client().ApplyURI(mongodbUrl)
 
 client, err := mongo.Connect(context.TODO(), clientOptions)
 if err != nil {
-    log.Fatal(err)
+	log.Fatal(err)
 }
 
 // 连接集合
