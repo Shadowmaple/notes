@@ -28,7 +28,7 @@ clientOptions := options.Client().ApplyURI(mongodbUrl)
 
 client, err := mongo.Connect(context.TODO(), clientOptions)
 if err != nil {
-	log.Fatal(err)
+    log.Fatal(err)
 }
 
 // 连接集合
@@ -42,8 +42,8 @@ collection := client.Database("table").Collection("test")
 ```go
 type User struct {
 	Name	string	`bson:"name"`
-	Sex		string	`bson:"sex"`
-	Age		int 	`bson:"age"`
+	Sex     string	`bson:"sex"`
+	Age     int 	`bson:"age"`
 }
 ```
 
