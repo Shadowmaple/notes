@@ -1,4 +1,7 @@
+# Linux的文件权限
+
 # 权限身份
+
 三种身份：
 1. 用户 User
 2. 群组 Group
@@ -11,7 +14,7 @@
 + /etc/group ： 记录所有组名
 
 # 文件属性
-```
+```shell
 ➜  HomeWorks 21:15:00 git:(master) ls -l
 total 132
 -rw-rw-r-- 1 lawler lawler 26041 4月  17 21:19 apiDoc.yaml
@@ -60,16 +63,18 @@ chgrp： 修改文件所属用户组
 chown： 修改文件拥有者以及用户组
 chmod： 修改文件权限
 
-chgrp
-```
+## chgrp
+
+```shell
 # 格式
 $ chgrp [option] grouup filename
 
 # -R 为递归修改
 $ chgrp -R lawler blog/
 ```
-chown
-```
+## chown
+
+```shell
 # 格式
 $ chown [option] user filename
 $ chown [option] user:group filename    # 也可用小数点[.]来间隔
@@ -77,14 +82,14 @@ $ chown [option] user:group filename    # 也可用小数点[.]来间隔
 # 例子
 # chown lawler:lawler test.c
 ```
-chmod
+## chmod
 数字类型权限表示：`rwx` --> 421
 符号类型权限表示：
 
 + `+ - =` --> 加入，移除，设置
 + `u g o a` --> user，group，others，all
 
-```
+```shell
 # 格式
 $ chmod [option] mode filename
 
