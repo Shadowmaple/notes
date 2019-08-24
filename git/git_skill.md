@@ -1,5 +1,19 @@
 # git命令
+
+```shell
+# 	查看改动
+git diff a.md
+
+# 查看日志
+git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative`
+
+# 设置别名
+git config --global alias.st status
 ```
+
+
+
+```shell
 git log
 
 git branch  bugFix      # 创建分支bugFix
