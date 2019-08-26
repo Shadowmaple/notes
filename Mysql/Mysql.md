@@ -28,14 +28,20 @@ shell> sudo service mysql start
 
 ## 连接
 进入mysql命令行模式
+```shell
+$ sudo mysql
+# 或
+$ mysql -uroot -p
 ```
-shell> sudo mysql
-```
+
+
 
 ## 导入书中的样例表
+
 https://blog.csdn.net/duhena0384/article/details/80396542
 
-## 基本操作
+# 基本操作
+
 ps：关键字都是大写，但因为大小写不敏感，所以可以用小写代替
 
 结束： ; 或 \g
@@ -43,7 +49,8 @@ ps：关键字都是大写，但因为大小写不敏感，所以可以用小写
 帮助： help 或 \h
 
 **注意：结尾要加分号( ; )！**
-```
+
+```mysql
 show databases;
 use <db_name>;
 show tables;
@@ -52,23 +59,23 @@ show columns from <table_name>;
 select * from <table_name>;
 select <column_name> from <table_name>;
 ```
-```
+```mysql
 help show;  #显示可用的show命令
 ```
 
 ## 创建数据库
-```
+```mysql
 Syntax:
 CREATE {DATABASE | SCHEMA} [IF NOT EXISTS] db_name
     [create_specification] ...
 ```
 例子
-```
+
+```mysql
 mysql> create database mytest;
 Query OK, 1 row affected (0.01 sec)
 
-mysql> show databases
-    -> ;
+mysql> show databases;
 +--------------------+
 | Database           |
 +--------------------+
@@ -82,16 +89,55 @@ mysql> show databases
 5 rows in set (0.00 sec)
 ```
 ## 创建表
-```
+```mysql
 Syntax:
 CREATE [TEMPORARY] TABLE [IF NOT EXISTS] tbl_name
     (create_definition,...)
     [table_options]
     [partition_options]
 ```
-# 检索数据
-## 检索列
+# 添加用户
+
+## 添加用户
+
+```mysql
+# 无密码登录
+create user 'lawler'@'localhost' identified by "";
+# 密码登录
+create user 'lawler'@'localhost' identified by "12345";
 ```
+
+## 赋予权限
+
+```mysql
+# 所有权限
+grant all privileges on *.* to 'lawler'@'localhost';
+# 某项数据库所有权限
+GRANT privileges ON databasename.* TO 'username'@'host'
+# 数据库的某个表的查找和插入权限
+GRANT SELECT, INSERT ON databasename.tablename TO 'username'@'host'
+```
+
+PS: privileges - 用户的操作权限,如SELECT , INSERT , UPDATE 等(详细列表见该文最后面).如果要授予所的权限则使用ALL.; databasename - 数据库名,tablename-表名,如果要授予该用户对所有数据库和表的相应操作权限则可用*表示, 如*.*.
+
+## 查看权限
+
+```mysql
+show grants for 'lawler'@'localhost'; 
+```
+
+## 删除用户
+
+```mysql
+drop user  'lawler'@'localhost'; 
+```
+
+
+
+# 检索数据
+
+## 检索列
+```mysql
 # 所有列
 select * from <table_name>;
 # 单个列
@@ -102,15 +148,15 @@ select <column1>, <column2>, <column3> from <table_name>;
 返回的数据是乱序的
 
 ## 检索不同行
-使用 DISINCT 关键字
-```
+使用 DISINCT 关键字，返回无重复的该列数据，即对该列数据进行去重操作
+```mysql
 mysql> SELECT DISTINCT <column> FROM <table>;
 
 mysql> select distinct vend_id from products;
 ```
 ## 限制结果
 使用 LIMIT 子句
-```
+```mysql
 # 返回不多于6行
 mysql> select prod_name from products limit 6;
 
@@ -123,13 +169,13 @@ mysql> select prod_name from products limit 3 offset 6;
 **注意：从 0 行开始！第一行为行0，因此 LIMIT 1,1 将检索出第二行而不是第一行**
 
 ## 完全限定的列明和表名
-```
+```mysql
 mysql> select products.prod_name from sample.products;
 ```
 
 ## 排序检索数据
-使用 OESWE BY 子句。OESWE BY 子句取一个或多个列的名字，据此对输出进行排序。
-```
+使用 ORDER BY 子句。ORDER BY 子句取一个或多个列的名字，据此对输出进行排序。
+```mysql
 # 子句使用检索的列，对该列以字母顺序排序，默认升序
 mysql> select prod_name from products order by prod_name;
 # 子句可用非检索的列排序
@@ -146,9 +192,9 @@ DESC 关键字只应用到直接位于其前面的列名，对多个列进行降
 ASC 关键字为升序，默认
 
 # 过滤数据 —— WHERE语句
-使用 WHERE 子句，不区分不小写
+使用 WHERE 子句，不区分大小写
 ## 条件操作符过滤
-```
+```mysql
 # 相等匹配
 mysql> select prod_name, prod_price from products 
     ->  where prod_price = 2.5;
@@ -158,7 +204,7 @@ mysql> select prod_name, prod_price from products
     ->  where prod_price between 5 and 10
     ->  order by prod_price;
 
-# 若含有空值的列，则返回，否则不返回数据    
+# 若含有空值的列，则返回，否则不返回数据
 mysql> select cust_id
     -> from customers
     -> where cust_email IS NULL;
@@ -172,14 +218,14 @@ mysql> select cust_id
 | <> | 不等于 |
 | != |不等于 |
 | BETWEEN | 两者之间 |
-| <,<=,>,>= | ... |
+| <,<=,>,>= | ...(不必多说) |
 
 注意：
 1. 同时使用 WHERE 和 ORDER BY 时，WHERE 应在前，否则会报错
 2. 使用 BETWEEN 时注意左低位，右高位，否则返回的是无数据
 
 ## 逻辑操作符过滤
-```
+```mysql
 # OR操作符
 mysql> select prod_name, prod_price from products
     -> where prod_price in (10, 8.99);
@@ -209,7 +255,8 @@ IN 不等于 BETWEEN ，而是相当于多个 OR！`x IN (a, b)` 相当于 `x = 
 
 LIKE 操作符
 为在搜索子句中使用通配符，必须使用**LIKE**操作符。LIKE指示MYSQL，后跟的搜索模式利用通配符匹配而不是直接相等匹配进行比较。
-```
+
+```mysql
 # (%)匹配符
 mysql> select prod_id, prod_name from products
     -> where prod_name like 'jet%';
@@ -220,7 +267,7 @@ mysql> select prod_id, prod_name from products
 ```
 
 注意：
-1. 匹配默认不区分不小写
+1. 匹配默认不区分大小写
 2. 注意尾空格的存在
 3. % 不能匹配 NULL
 4. 使用通配符的搜索效率较低，因此不要过度使用通配符
@@ -231,9 +278,9 @@ mysql> select prod_id, prod_name from products
 使用 REGEXP 关键字
 
 LIKE 与 REGEXP 的区别：
-LIKE 匹配整个列， REGEXP则在列值内进行匹配
+LIKE 匹配整个列， REGEXP则在列值内进行匹配。
 
-```
+```mysql
 mysql> select prod_id, prod_name from products
     -> where prod_name regexp '[123] Ton';
 ```
@@ -241,28 +288,31 @@ mysql> select prod_id, prod_name from products
 在 Mysql 中，转义特殊字符需要两个反斜杠`（\\）`。因为一个由 Mysql 解释，另一个由正则表达式库解释。
 ( ^ )有两种用法。在集合中，用它来否定该集合（`'[^123]'`），在集合外，表示串的开始处（`'^[123]'`）。
 
-简单的正则表达式测试
-```
+正则表达式的特性，只要匹配到相应的字段，那么这个列的值就匹配。如下，简单的正则表达式测试：
+
+```mysql
 mysql> SELECT 'hello' REGEXP '[0-9]';
-+------------------------+
++----------------------------+
 | 'hello' REGEXP '[0-9]' |
-+------------------------+
-|                      0 |
-+------------------------+
++----------------------------+
+|                      0 					 |
++----------------------------+
 1 row in set (0.00 sec)
 # 返回0表示未匹配
 
 mysql> SELECT 'hello4' REGEXP '[0-9]';
-+-------------------------+
++------------------------------+
 | 'hello4' REGEXP '[0-9]' |
-+-------------------------+
-|                       1 |
-+-------------------------+
++------------------------------+
+|                       1 						|
++------------------------------+
 1 row in set (0.00 sec)
 # 返回1表示匹配
 ```
 
 > 更多姿势详见正则表达式规则
+>
+> [学习文档](https://github.com/ziishaned/learn-regex/blob/master/translations/README-cn.md)
 
 
 # 计算字段
@@ -270,10 +320,11 @@ mysql> SELECT 'hello4' REGEXP '[0-9]';
 字段(field)：基本与列的意思相同，经常互换使用，但字段通常用在计算字段的连接上
 拼接(concatenate)：将值联结到一起构成单个值
 
-使用 Concat() 函数来拼接两个列
-Concat() 拼接串，即把多个串链接起来形成一个较长的串。
+使用 `Concat()` 函数来拼接两个列
+`Concat()` 拼接串，即把多个串连接起来形成一个较长的串。
 其需要一个或多个指定的串，各个串之间的用逗号分隔。
-```
+
+```mysql
 mysql> select concat(vend_name, ' (', vend_country, ')')
     -> from vendors order by vend_name;
 +--------------------------------------------+
@@ -290,7 +341,7 @@ mysql> select concat(vend_name, ' (', vend_country, ')')
 ```
 
 赋予别名—— AS 关键字
-```
+```mysql
 mysql> select concat(vend_name, ' (', vend_country, ')')
     -> as vend_title
     -> from vendors order by vend_name;
@@ -308,8 +359,23 @@ mysql> select concat(vend_name, ' (', vend_country, ')')
 ```
 
 ## 执行算数计算
-算术操作符：+, -, *, /
+算术操作符：+,  -,  *,  /
+
+测试计算
+
+```mysql
+mysql> select 6/2;
++--------+
+| 6/2    |
++--------+
+| 3.0000 |
++--------+
+1 row in set (0.00 sec)
 ```
+
+实际应用
+
+```mysql
 mysql> select quantity*item_price as expanded_price
     -> from orderitems where order_num = 20005;
 +----------------+
@@ -323,17 +389,6 @@ mysql> select quantity*item_price as expanded_price
 4 rows in set (0.00 sec)
 # 输出的 expanded_price 列为一个计算字段
 ```
-测试计算
-```
-mysql> select 6/2;
-+--------+
-| 6/2    |
-+--------+
-| 3.0000 |
-+--------+
-1 row in set (0.00 sec)
-```
-
 # 数据处理函数
 函数的可移植性不强
 
