@@ -204,7 +204,10 @@ alter table Addressbook add column (postal_code char(8) not null);
 RENAME TABLE <原始表名> to <新表名>;
 ```
 
+## 注释
 
+1.  单行注释： `--`。要注意后面要空一格，否则不会认为是注释
+2.  多行注释：`/*` 和 `*/`。
 
 # 检索数据
 
@@ -217,7 +220,7 @@ select <column_name> from <table_name>;
 # 多个列
 select <column1>, <column2>, <column3> from <table_name>;
 ```
-返回的数据是乱序的
+注意：使用`*`返回的列的顺序是定义时的顺序。
 
 ## 检索不同行
 使用 DISINCT 关键字，返回无重复的该列数据，即对该列数据进行去重操作
@@ -226,7 +229,14 @@ mysql> SELECT DISTINCT <column> FROM <table>;
 
 mysql> select distinct vend_id from products;
 ```
+注意：
+
++   在使用 DISTINCT 时, NULL 也被视为一类数据。 NULL 存在于多行中时 , 也会被合并为一条 NULL 数据。
+
++   多条列名时，DISTINCT 关键字只能用在第一个列名之前。
+
 ## 限制结果
+
 使用 LIMIT 子句
 ```mysql
 # 返回不多于6行
@@ -302,11 +312,15 @@ mysql> select cust_id
 ```mysql
 # OR操作符
 mysql> select prod_name, prod_price from products
-    -> where prod_price in (10, 8.99);
+    -> where prod_price = 10 or prod_price = 8.99;
 
 # IN操作符
 mysql> select prod_name, prod_price from products
     -> where prod_price in (10, 8.99);
+    
+# NOT
+mysql> select prod_name, prod_price from products
+    -> where not prod_price > 5;
 ```
 |逻辑操作符| 说明 |
 | :---: | :---: |
@@ -317,7 +331,8 @@ mysql> select prod_name, prod_price from products
 
 注意：
 
-IN 不等于 BETWEEN ，而是相当于多个 OR！`x IN (a, b)` 相当于 `x = a OR x = b`
++   IN 不等于 BETWEEN ，而是相当于多个 OR！`x IN (a, b)` 相当于 `x = a OR x = b`。
++   AND 运算符优先于 OR 运算符，可以使用括号。
 
 ## 通配符过滤
 通配符：用来匹配一部分的特殊字符
@@ -532,7 +547,7 @@ mysql> select now();
 | Sqrt() | 平方根|
 | Tan() | 正切|
 
-# 汇总数据
+# 数据汇总
 ## 聚集函数
 聚集函数：运行在行组上，计算和返回单个值的函数
 
@@ -547,12 +562,22 @@ mysql> select now();
 例：
 
 ```mysql
+# 该列的平均值
 mysql> select avg(prod_price) as avg_price from products;
 ```
 
-对于列值为 NULL 的情况：
+注：
 
-一般都忽略，但是 `COUNT()` 函数有点区别。`COUNT(*)` 时不忽略列值为 NULL 的行，而 `COUNT(Column)` 对某一列进行计算时，会忽略 NULL 的行
++   除了 COUNT() 函数，其它函数都不能将 * 作为参数。
++   MAX / MIN 函数几乎适用于所有数据类型的列。 SUM / AVG 函数只适用于数值类型的列。
+
++   对于列值为 NULL 的情况：
+
+    一般都忽略，但是 `COUNT()` 函数有点区别。`COUNT(*)` 时不忽略列值为 NULL 的行，而 `COUNT(Column)` 对某一列进行计算时，会忽略 NULL 的行。
+
++   所有的聚合函数都可以使用 DISTINCT 来去除重复数据。
+
++   只有 SELECT 子句和 HAVING 子句(以及 ORDER BY 子句)中能够使用聚合函数，WHERE 不能使用聚合函数。
 
 ## 聚集不同值
 使用 DISTINCT 参数，默认为 ALL 参数
@@ -563,10 +588,13 @@ mysql> select avg(distinct prod_price) from products;
 
 若指定列明，则 DISTINCT 只能用于 COUNT(Column)。DISTINCT 不能用于 COUNT(*)，也不允许使用 COUNT(DISTINCT)，否则会产生错误。
 
-# 分组数据
-分组允许把数据分为多个逻辑组，以便能对每个组进行聚集计算
+# 数据分组
 
-使用 `GROUP BY` 语句
+## 分组
+
+分组允许把数据分为多个逻辑组，以便能对每个组进行聚集计算。
+
+使用 `GROUP BY` 语句进行分组，且可以通过逗号分隔指定多列。在 GROUP BY 子句中指定的列称为聚合键或者分组列。
 
 使用 `WITH ROLLUP` 关键字，可以得到每个分组以及每个分组汇总级别的值（针对每个分组）
 ```mysql
@@ -599,9 +627,9 @@ mysql> select vend_id, count(*) from products group by vend_id with rollup;
 1. GROUP BY 子句可以包含任意数目的列。这使得能对分组进行嵌套，为数据分组提供更细致的控制。
 2. 若嵌套了分组，数据将在最后规定的分组上进行汇总。即在建立分组时，指定的所有列都一起计算，所以不能从个别的列取回数据。
 3. GROUP BY子句中列出的每个列都必须是检索列或有效的表达式，但不能是聚集函数。若在SELECT中时候用表达式，则必须在GROUP BY子句中指定相同的表达式，不能使用别名。
-4. 除聚集计算语句外，SELECT 语句中的每个列都必须在GROUP BY子句中给出
+4. 除聚集计算语句外，不能把聚合键之外的列名书写在 SELECT 子句之中，否则会报错。
 5. 若分组列中具有 NULL 值，则NULL将作为一个分组返回；若有多行NULL值，则将它们分为一组。
-6. GROUP BY子句必须出现在WHERE子句之后，ORDER BY子句之前。
+6. 使用 WHERE 子句进行汇总处理时，会先根据 WHERE 子句指定的条件进行过滤,然后再进行汇总处理。
 
 ## 过滤分组
 使用 HAVING 关键字进行过滤分组。
@@ -620,7 +648,12 @@ mysql> select cust_id, count(*) as orders from orders
     -> having count(*) >= 2;
 ```
 
+注：
+
+聚合键所对应的条件不应该书写在 HAVING 子句当中,而应该书写在 WHERE 子句当中。
+
 ## 分组和排序
+
 GROUP BY 输出的可能不是分组的顺序，所以不一定是有序的，因此要想保证有序，就要使用 ORDER BY 子句。
 
 注意子句的顺序：
@@ -689,3 +722,10 @@ mysql> select prod_name, vend_name, prod_price, quantity
 4. 要注意考虑性能。不要联结不必要的表，联结的表越多，性能下降越厉害。
 5. 表别名只在查询执行中使用，与列别名不一样，表别名不返回到客户机。
 
+# 其它
+
++   使用字符串或者日期常数时，必须使用单引号 ( ' ) 将其括起来
+
++   用 AS 可以设定别名，设定中文名时要用双引号，而非单引号，而中文作为单元的数据要用单引号
++   条件运算符对 NULL 无效，应该用 `is null` 和 `is not null`。
++   逻辑运算符对 NULL 会产生 不确定(UNKNOWN) ，所以尽量不用 NULL 进行任何运算，即尽量讲 NOT NULL 包含进字段的约束条件 
