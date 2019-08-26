@@ -50,6 +50,48 @@ $ mysql -uroot -p
 
 
 
+# 添加用户
+
+## 添加用户
+
+```mysql
+# 无密码登录
+create user 'lawler'@'localhost' identified by "";
+# 密码登录
+create user 'lawler'@'localhost' identified by "12345";
+```
+
+## 赋予权限
+
+```mysql
+# 所有权限
+grant all privileges on *.* to 'lawler'@'localhost';
+
+# 某项数据库所有权限
+GRANT privileges ON databasename.* TO 'username'@'host'
+
+# 数据库的某个表的查找和插入权限
+GRANT SELECT, INSERT ON databasename.tablename TO 'username'@'host'
+```
+
+注意：
+
+privileges - 用户的操作权限，如SELECT , INSERT , UPDATE 等。
+
+如果要授予所的权限则使用`ALL`；如果要授予该用户对所有数据库和表的相应操作权限则可用*表示，如*``.*.`。
+
+## 查看权限
+
+```mysql
+show grants for 'lawler'@'localhost'; 
+```
+
+## 删除用户
+
+```mysql
+drop user  'lawler'@'localhost'; 
+```
+
 # 基本操作
 
 ps：关键字都是大写，但因为大小写不敏感，所以可以用小写代替
@@ -107,43 +149,59 @@ CREATE [TEMPORARY] TABLE [IF NOT EXISTS] tbl_name
     (create_definition,...)
     [table_options]
     [partition_options]
+    
+CREATE TABLE < 表名 >
+(<列名1> < 数据类型 > < 该列所需约束 > ,
+<列名2> < 数据类型 > < 该列所需约束 > ,
+<列名3> < 数据类型 > < 该列所需约束 > );  
 ```
-# 添加用户
+数据类型有 INTEGER, CHAR, DATE 等，约束条件有 NOT NULL, PRIMARY KEY (主键) 等。
 
-## 添加用户
+例如：
 
 ```mysql
-# 无密码登录
-create user 'lawler'@'localhost' identified by "";
-# 密码登录
-create user 'lawler'@'localhost' identified by "12345";
+create table Addressbook(
+    regist_no		integer 				not null,
+    name				varchar(128) 	not null,
+    address				varchar(256)	not null,
+    tel_no 					char(10),
+    mail_address	char(20), 
+    primary key (regist_no)
+) 
 ```
 
-## 赋予权限
+
+
+## 删除表
 
 ```mysql
-# 所有权限
-grant all privileges on *.* to 'lawler'@'localhost';
-# 某项数据库所有权限
-GRANT privileges ON databasename.* TO 'username'@'host'
-# 数据库的某个表的查找和插入权限
-GRANT SELECT, INSERT ON databasename.tablename TO 'username'@'host'
+DROP TABLE  <表名>;
 ```
 
-PS: 
+## 更新表的定义
 
-privileges - 用户的操作权限，如SELECT , INSERT , UPDATE 等(详细列表见该文最后面)。如果要授予所的权限则使用`ALL`；databasename - 数据库名，tablename-表名，如果要授予该用户对所有数据库和表的相应操作权限则可用*表示，如*.`*.`
-
-## 查看权限
+在表创建完成之后才发现字段多了或者少了，这时候无需删表重新创建，只要对表更新定义即可。
 
 ```mysql
-show grants for 'lawler'@'localhost'; 
+# 添加字段
+ALTER TABLE < 表名 > ADD COLUMN < 列的定义 > ;
+
+# 删除字段
+ALTER TABLE < 表名 > DROP COLUMN < 列名 > ;
 ```
 
-## 删除用户
+如：
 
 ```mysql
-drop user  'lawler'@'localhost'; 
+alter table Addressbook add column (postal_code char(8) not null);
+```
+
+
+
+## 更改表名
+
+```mysql
+RENAME TABLE <原始表名> to <新表名>;
 ```
 
 
