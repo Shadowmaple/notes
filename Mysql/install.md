@@ -96,8 +96,6 @@ All done!
 
 
 
-
-
 ## 连接数据库
 
 ```shell
@@ -107,8 +105,6 @@ $ sudo mysql -uroot -p
 $ mysql -h 127.0.0.1 -P 3306 -uroot -p123456
 # -h 为远程IP，-P 为端口号，-u 为用户名，-p 为密码
 ```
-
-
 
 
 

@@ -2,11 +2,17 @@
 
 # 了解数据库
 数据库(database)是一个以某种有组织的方式存储的数据集合，是保存有组织的数据的容器，通常是一个文件或一组文件
+
 表(table)是某种特定类型数据的结构化清单
+
 模式(schema)是关于数据库和表的布局以及特性的信息
+
 列(column)是表中的一个字段，存储着表中某部分的信息。所有表都是由一个或多个列组成的
+
 行(row)是表中的一个记录
+
 主键(primary key) 是唯一标识表中每行的一列或一组列，用来表示一个特定的行
+
 字句(clause) 用于构成sql语句
 
 ## SQL
@@ -15,9 +21,13 @@ SQL ：结构化查询语言(Structured Query Language)，是一种专门用来�
 ## MySQL
 是一种数据库软件(DBMS)
 
-## 下载&安装
-[官网下载](https://dev.mysql.com/downloads/)
-[官网apt安装步骤](https://dev.mysql.com/doc/mysql-apt-repo-quick-guide/en/)
+# 安装
+
+>   [官网下载](https://dev.mysql.com/downloads/)
+>
+>   [官网apt安装步骤](https://dev.mysql.com/doc/mysql-apt-repo-quick-guide/en/)
+>
+>   [安装笔记](https://github.com/Shadowmaple/notes/blob/master/Mysql/install.md)
 
 ## 启动&停止服务
 ```shell
@@ -34,18 +44,20 @@ $ sudo mysql
 $ mysql -uroot -p
 ```
 
+## 导入样例数据
+
+>   https://blog.csdn.net/duhena0384/article/details/80396542
 
 
-## 导入书中的样例表
-
-https://blog.csdn.net/duhena0384/article/details/80396542
 
 # 基本操作
 
 ps：关键字都是大写，但因为大小写不敏感，所以可以用小写代替
 
 结束： ; 或 \g
+
 退出： quit 或 exit
+
 帮助： help 或 \h
 
 **注意：结尾要加分号( ; )！**
@@ -118,7 +130,9 @@ GRANT privileges ON databasename.* TO 'username'@'host'
 GRANT SELECT, INSERT ON databasename.tablename TO 'username'@'host'
 ```
 
-PS: privileges - 用户的操作权限,如SELECT , INSERT , UPDATE 等(详细列表见该文最后面).如果要授予所的权限则使用ALL.; databasename - 数据库名,tablename-表名,如果要授予该用户对所有数据库和表的相应操作权限则可用*表示, 如*.*.
+PS: 
+
+privileges - 用户的操作权限，如SELECT , INSERT , UPDATE 等(详细列表见该文最后面)。如果要授予所的权限则使用`ALL`；databasename - 数据库名，tablename-表名，如果要授予该用户对所有数据库和表的相应操作权限则可用*表示，如*.`*.`
 
 ## 查看权限
 
@@ -189,6 +203,7 @@ mysql> select prod_id, prod_id, prod_name from products
     ->  order by prod_price, prod_name;
 ```
 DESC 关键字只应用到直接位于其前面的列名，对多个列进行降序，则需对每个列指定DESC关键字
+
 ASC 关键字为升序，默认
 
 # 过滤数据 —— WHERE语句
@@ -221,6 +236,7 @@ mysql> select cust_id
 | <,<=,>,>= | ...(不必多说) |
 
 注意：
+
 1. 同时使用 WHERE 和 ORDER BY 时，WHERE 应在前，否则会报错
 2. 使用 BETWEEN 时注意左低位，右高位，否则返回的是无数据
 
@@ -242,10 +258,12 @@ mysql> select prod_name, prod_price from products
 | NOT |
 
 注意：
+
 IN 不等于 BETWEEN ，而是相当于多个 OR！`x IN (a, b)` 相当于 `x = a OR x = b`
 
 ## 通配符过滤
 通配符：用来匹配一部分的特殊字符
+
 搜索模式：由字面值、通配符或两者组合构成的搜索条件
 
 | 通配符 | 说明 |
@@ -253,7 +271,8 @@ IN 不等于 BETWEEN ，而是相当于多个 OR！`x IN (a, b)` 相当于 `x = 
 | % | 匹配任意个字符，包括0个字符 |
 | _ | 只匹配单个字符，不包括0个字符 |
 
-LIKE 操作符
+LIKE 操作符：
+
 为在搜索子句中使用通配符，必须使用**LIKE**操作符。LIKE指示MYSQL，后跟的搜索模式利用通配符匹配而不是直接相等匹配进行比较。
 
 ```mysql
@@ -278,6 +297,7 @@ mysql> select prod_id, prod_name from products
 使用 REGEXP 关键字
 
 LIKE 与 REGEXP 的区别：
+
 LIKE 匹配整个列， REGEXP则在列值内进行匹配。
 
 ```mysql
@@ -318,11 +338,12 @@ mysql> SELECT 'hello4' REGEXP '[0-9]';
 # 计算字段
 ## 拼接字段
 字段(field)：基本与列的意思相同，经常互换使用，但字段通常用在计算字段的连接上
+
 拼接(concatenate)：将值联结到一起构成单个值
 
-使用 `Concat()` 函数来拼接两个列
-`Concat()` 拼接串，即把多个串连接起来形成一个较长的串。
-其需要一个或多个指定的串，各个串之间的用逗号分隔。
+使用 `Concat()` 函数来拼接两个列。
+
+`Concat()` 拼接串，即把多个串连接起来形成一个较长的串。其需要一个或多个指定的串，各个串之间的用逗号分隔。
 
 ```mysql
 mysql> select concat(vend_name, ' (', vend_country, ')')
@@ -396,62 +417,62 @@ mysql> select quantity*item_price as expanded_price
 | 函数 | 说明 |
 | :---: | :---: |
 | Left() | 返回串左边的字符 |
-| Length() | 返回串的长度
-| Locate() | 找出串的一个子串
-| Lower() | 转换为小写
-| LTrim() | 去掉左边的空格
-| RTrim() | 去掉右边的空格
-| Right() | 返回串右边的字符
-| Soundex() | 返回串的SOUNDEX值
-| SubString() | 返回子串的字符
-| Upper() | 转换为大写
+| Length() | 返回串的长度 |
+| Locate() | 找出串的一个子串|
+| Lower() | 转换为小写|
+| LTrim() | 去掉左边的空格|
+| RTrim() | 去掉右边的空格|
+| Right() | 返回串右边的字符|
+| Soundex() | 返回串的SOUNDEX值|
+| SubString() | 返回子串的字符|
+| Upper() | 转换为大写 |
 
 Soundex() 是一个将任何文本串替换为描述其语音表示的字母数字模式的算法，即根据发音确定是否符合
 
 ## 日期和时间处理函数
 | 函数 | 说明 |
 | :---: | :---: |
-| AddDate() | 增加一个日期
-| AddTime() | 增加一个时间
-| CurDate() |  返回当前日期
-| CurTime() | 返回当前时间
-| Date() | 返回日期时间的日期部分
-| DateDiff() | 计算两个日期之差
-| Date_Add() | 高度灵活的日期运算函数
-| Date_Format() |  返回一个格式化的日期或时间串
-| Day() | 返回一个日期的天数部分
-| DayOfWeek() | 返回一个对应日期的星期几
-| Hour() | 返回小时部分
-| Minute() | 返回分钟部分
-| Month() | 返回月份
-| Now() | 返回当前日期和时间
-| Second() | 返回秒部分
-| Time() | 返回一个日期时间的时间部分
-| Year() | 返回年份
+| AddDate() | 增加一个日期 |
+| AddTime() | 增加一个时间 |
+| CurDate() |  返回当前日期 |
+| CurTime() | 返回当前时间 |
+| Date() | 返回日期时间的日期部分|
+| DateDiff() | 计算两个日期之差|
+| Date_Add() | 高度灵活的日期运算函数|
+| Date_Format() |  返回一个格式化的日期或时间串|
+| Day() | 返回一个日期的天数部分|
+| DayOfWeek() | 返回一个对应日期的星期几|
+| Hour() | 返回小时部分|
+| Minute() | 返回分钟部分|
+| Month() | 返回月份|
+| Now() | 返回当前日期和时间|
+| Second() | 返回秒部分|
+| Time() | 返回一个日期时间的时间部分|
+| Year() | 返回年份|
 
-```
+```mysql
 # 返回当前日期和时间
 mysql> select now();
-+---------------------+
-| now()               |
-+---------------------+
++---------------------------+
+| now()              		 		 |
++---------------------------+
 | 2019-04-29 23:12:33 |
-+---------------------+
++---------------------------+
 1 row in set (0.00 sec)
 ```
 
 ## 数值处理函数
 | 函数 | 说明 |
 | :---: | :---: |
-| Abs() | 绝对值
-| Cos() | 余弦
-| Exp() | 返回指数值
-| Mod() | 余数
-| Pi() | 圆周率
-| Rand() | 返回一个随机数
-| Sin() | 正弦
-| Sqrt() | 平方根
-| Tan() | 正切
+| Abs() | 绝对值|
+| Cos() | 余弦|
+| Exp() | 返回指数值|
+| Mod() | 余数|
+| Pi() | 圆周率|
+| Rand() | 返回一个随机数|
+| Sin() | 正弦|
+| Sqrt() | 平方根|
+| Tan() | 正切|
 
 # 汇总数据
 ## 聚集函数
@@ -461,33 +482,36 @@ mysql> select now();
 | :---: | :---: |
 | AVG() | 返回某列的平均值 |
 | COUNT() | 返回某列的行数 |
-| MAX() | 返回某列的最大值
+| MAX() | 返回某列的最大值 |
 | MIN() | 返回最小值 |
 | SUM() | 返回某列值之和 |
 
 例：
-```
+
+```mysql
 mysql> select avg(prod_price) as avg_price from products;
 ```
 
 对于列值为 NULL 的情况：
-一般都忽略，但是 COUNT() 函数有点区别。COUNT(*) 时不忽略 列值为NULL的行，而 COUNT(Column) 对某一列进行计算时，会忽略 NULL 的行
+
+一般都忽略，但是 `COUNT()` 函数有点区别。`COUNT(*)` 时不忽略列值为 NULL 的行，而 `COUNT(Column)` 对某一列进行计算时，会忽略 NULL 的行
 
 ## 聚集不同值
 使用 DISTINCT 参数，默认为 ALL 参数
-```
+```mysql
 mysql> select avg(distinct prod_price) from products;
 ```
 注意：
+
 若指定列明，则 DISTINCT 只能用于 COUNT(Column)。DISTINCT 不能用于 COUNT(*)，也不允许使用 COUNT(DISTINCT)，否则会产生错误。
 
 # 分组数据
 分组允许把数据分为多个逻辑组，以便能对每个组进行聚集计算
 
-使用 GROUP BY 语句
+使用 `GROUP BY` 语句
 
-使用 WITH ROLLUP 关键字，可以得到每个分组以及每个分组汇总级别的值（针对每个分组）
-```
+使用 `WITH ROLLUP` 关键字，可以得到每个分组以及每个分组汇总级别的值（针对每个分组）
+```mysql
 mysql> select vend_id, count(*) from products group by vend_id;
 +---------+----------+
 | vend_id | count(*) |
@@ -498,6 +522,7 @@ mysql> select vend_id, count(*) from products group by vend_id;
 |    1005 |        2 |
 +---------+----------+
 4 rows in set (0.04 sec)
+# 实际上就是分类汇总
 
 # 加上 WITH ROLLUP 关键字
 mysql> select vend_id, count(*) from products group by vend_id with rollup;
@@ -514,35 +539,42 @@ mysql> select vend_id, count(*) from products group by vend_id with rollup;
 ```
 注意：
 1. GROUP BY 子句可以包含任意数目的列。这使得能对分组进行嵌套，为数据分组提供更细致的控制。
-2. 若嵌套了分组，数据将在最后规定的分组上进行汇总。即在建立分组时，指定的虽有列都一起计算，所以不能从个别的列取回数据。
+2. 若嵌套了分组，数据将在最后规定的分组上进行汇总。即在建立分组时，指定的所有列都一起计算，所以不能从个别的列取回数据。
 3. GROUP BY子句中列出的每个列都必须是检索列或有效的表达式，但不能是聚集函数。若在SELECT中时候用表达式，则必须在GROUP BY子句中指定相同的表达式，不能使用别名。
 4. 除聚集计算语句外，SELECT 语句中的每个列都必须在GROUP BY子句中给出
 5. 若分组列中具有 NULL 值，则NULL将作为一个分组返回；若有多行NULL值，则将它们分为一组。
 6. GROUP BY子句必须出现在WHERE子句之后，ORDER BY子句之前。
 
 ## 过滤分组
-使用 HAVING 关键字
-由于 WHERE 过滤指定的是行而不是分组，所以不能完成过滤分组的任务
-HACING 支持所有 WHERE 的操作符，即句法相同，只是关键字有差别
-差别：
+使用 HAVING 关键字进行过滤分组。
+
+由于 WHERE 过滤指定的是行而不是分组，所以不能完成过滤分组的任务。
+
+HACING 支持所有 WHERE 的操作符，即句法相同，只是关键字有差别。
+
+两者差别：
+
 WHERE在数据分组前进行过滤，而HAVING在数据分组后进行过滤。WHERE排除的行不包括在分组中，这可能会改变计算值，从而影响 HAVING 子句中基于这些值过滤掉的分组。
-```
+
+```mysql
 mysql> select cust_id, count(*) as orders from orders 
     -> group by cust_id
     -> having count(*) >= 2;
 ```
 
 ## 分组和排序
-GROUP BY 输出的可能不是分组的顺序，所以不一定是有序的，因此要想保证有序，就要使用 ORDER BY 子句
+GROUP BY 输出的可能不是分组的顺序，所以不一定是有序的，因此要想保证有序，就要使用 ORDER BY 子句。
 
 注意子句的顺序：
-```
+```mysql
 SELECT -> FROM -> WHERE -> GROUP BY -> HAVING -> ORDER BY -> LIMIT
 ```
 # 子查询
 子查询， 即嵌套在其他查询中的查询
+
 相关子查询：涉及外部查询的子查询
-```
+
+```mysql
 # 在WHERE子句中使用子查询，利用子查询实现过滤
 mysql> select cust_id from orders
     -> where order_num in (select order_num
@@ -557,17 +589,22 @@ mysql> select cust_name, cust_state,
     -> order by cust_name;
 ```
 注意：
-列必须匹配。在WHERE子句中使用子查询，应保证SELECT语句具有与WHERE子句中相同数目的列。子查询可以单列与单列匹配，也可以多列与多列匹配。
+
+列必须匹配。在WHERE子句中使用子查询，应保证 SELECT 语句具有与 WHERE 子句中相同数目的列。子查询可以单列与单列匹配，也可以多列与多列匹配。
 
 # 联结表
 外键(foreign key)：某个表中的一列，包含另一个表的主键值，定义了两个表的关系
+
 可伸缩性(scale)：能够适应不断增加的工作量而不失败
+
 联结：联结是一种机制，用来在一条SELECT语句中关联表
+
 内部联结：也称等值联结，是基于两个表之间的相等测试
+
 笛卡尔积：由没有联结条件的表关系返回的结果。检索处的行的数目将是第一个表中的行数与第二个表行数的乘积
 
 
-```
+```mysql
 # 创建联结，规定要联结的所有表以及他们如何关联即可
 mysql> select vend_name, prod_name, prod_price
     -> from vendors, products
@@ -589,8 +626,8 @@ mysql> select prod_name, vend_name, prod_price, quantity
 ```
 注意：
 1. 应使用完全限定列名
-2. 应保证所有联结都有WHERE子句
-3. WHERE子句定义联结条件比较简单；`INNER JOIN... ON...`语句能明确使用的联结条件，但有时候会影响性能
+2. 应保证所有联结都有 WHERE 子句
+3. WHERE 子句定义联结条件比较简单；`INNER JOIN... ON...`语句能明确使用的联结条件，但有时候会影响性能
 4. 要注意考虑性能。不要联结不必要的表，联结的表越多，性能下降越厉害。
-5. 表别名只在查询执行中使用，与列别名不一样，表别名不返回到客户机
+5. 表别名只在查询执行中使用，与列别名不一样，表别名不返回到客户机。
 
