@@ -155,7 +155,7 @@ CREATE TABLE < 表名 >
 <列名2> < 数据类型 > < 该列所需约束 > ,
 <列名3> < 数据类型 > < 该列所需约束 > );  
 ```
-数据类型有 INTEGER, CHAR, DATE 等，约束条件有 NOT NULL, PRIMARY KEY (主键) 等。
+数据类型有 INTEGER, CHAR, DATE 等，约束条件有 NOT NULL, PRIMARY KEY (主键)，DEFAULT 0  等。
 
 例如：
 
@@ -255,8 +255,9 @@ mysql> select prod_name from products limit 3 offset 6;
 mysql> select products.prod_name from sample.products;
 ```
 
-## 排序检索数据
-使用 ORDER BY 子句。ORDER BY 子句取一个或多个列的名字，据此对输出进行排序。
+## 排序
+使用 ORDER BY 子句。ORDER BY 子句取一个或多个列的名字，据此对输出进行排序。ORDER BY 子句中书写的列名称为排序键。
+
 ```mysql
 # 子句使用检索的列，对该列以字母顺序排序，默认升序
 mysql> select prod_name from products order by prod_name;
@@ -266,16 +267,23 @@ mysql> select prod_name from products order by prod_price;
 # 降序，使用 DESC 关键字
 mysql> select prod_name from products order by prod_name DESC;
 
-# 按多个列排序，首先价格排列，对相同的再进行字母排列
+# 多个排序键，首先价格排列，对相同的再进行字母排列
 mysql> select prod_id, prod_id, prod_name from products
     ->  order by prod_price, prod_name;
 ```
-DESC 关键字只应用到直接位于其前面的列名，对多个列进行降序，则需对每个列指定DESC关键字
+注：
 
-ASC 关键字为升序，默认
++   DESC 关键字只应用到直接位于其前面的列名，对多个列进行降序，则需对每个列指定DESC关键字。
+
++   ASC 关键字为升序，默认升序。
+
++   由于 ASC 和 DESC 这两个关键字是以列为单位指定的，因此可以同时指定一个列为升序，指定其他列为降序。
+
++   排序键中包含 NULL 时，会在开头或末尾进行汇总。
++   在 ORDER BY 子句中可以使用 SELECT 子句中定义的别名。
++   在 ORDER BY 子句中可以使用 SELECT 子句中未使用的列和聚合函数。
 
 # 过滤数据 —— WHERE语句
-使用 WHERE 子句，不区分大小写
 ## 条件操作符过滤
 ```mysql
 # 相等匹配
@@ -305,8 +313,9 @@ mysql> select cust_id
 
 注意：
 
-1. 同时使用 WHERE 和 ORDER BY 时，WHERE 应在前，否则会报错
-2. 使用 BETWEEN 时注意左低位，右高位，否则返回的是无数据
+1.  使用 WHERE 子句，不区分大小写
+2.  同时使用 WHERE 和 ORDER BY 时，WHERE 应在前，否则会报错
+3.  使用 BETWEEN 时注意左低位，右高位，否则返回的是无数据
 
 ## 逻辑操作符过滤
 ```mysql
@@ -486,7 +495,7 @@ mysql> select quantity*item_price as expanded_price
 # 数据处理函数
 函数的可移植性不强
 
-## 文本处理函数
+## 字符串处理函数
 | 函数 | 说明 |
 | :---: | :---: |
 | Left() | 返回串左边的字符 |
@@ -499,8 +508,21 @@ mysql> select quantity*item_price as expanded_price
 | Soundex() | 返回串的SOUNDEX值|
 | SubString() | 返回子串的字符|
 | Upper() | 转换为大写 |
+| Concat() | 字符串拼接 |
 
-Soundex() 是一个将任何文本串替换为描述其语音表示的字母数字模式的算法，即根据发音确定是否符合
+注：
+
+Soundex() 是一个将任何文本串替换为描述其语音表示的字母数字模式的算法，即根据发音确定是否符合。
+
+Length() 函数是根据字符串的字节数来判断的，即对于中文字符的结果在 utf-8下是一个汉字返回3，而在一些中文字节编码下返回的是2。
+
+Substring函数用法：
+
+```mysql
+SUBSTRING (对象字符串 FROM 截取的起始位置 FOR 截取的字符数)
+```
+
+
 
 ## 日期和时间处理函数
 | 函数 | 说明 |
@@ -540,12 +562,18 @@ mysql> select now();
 | Abs() | 绝对值|
 | Cos() | 余弦|
 | Exp() | 返回指数值|
-| Mod() | 余数|
+| Mod( 被除数,除数 ) | 求余 |
+| Round(对象数值,保留小数的位数) | 四舍五入 |
 | Pi() | 圆周率|
 | Rand() | 返回一个随机数|
 | Sin() | 正弦|
 | Sqrt() | 平方根|
 | Tan() | 正切|
+| Numeric(全体位数,小数位数) | 浮点数数据类型 |
+
+NUMERIC 是大多数 DBMS 都支持的一种数据类型，通过 `NUMBERIC(全体位数 , 小数位数)` 的形式来指定数值的大小，支持小数，应用在创建表的时候。
+
+
 
 # 数据汇总
 ## 聚集函数
@@ -650,7 +678,7 @@ mysql> select cust_id, count(*) as orders from orders
 
 注：
 
-聚合键所对应的条件不应该书写在 HAVING 子句当中,而应该书写在 WHERE 子句当中。
+聚合键所对应的条件不应该书写在 HAVING 子句当中，而应该书写在 WHERE 子句当中。
 
 ## 分组和排序
 
@@ -660,7 +688,18 @@ GROUP BY 输出的可能不是分组的顺序，所以不一定是有序的，�
 ```mysql
 SELECT -> FROM -> WHERE -> GROUP BY -> HAVING -> ORDER BY -> LIMIT
 ```
+执行顺序：
+
+```mysql
+FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT
+```
+
+
+
 # 子查询
+
+## 子查询
+
 子查询， 即嵌套在其他查询中的查询
 
 相关子查询：涉及外部查询的子查询
@@ -682,6 +721,46 @@ mysql> select cust_name, cust_state,
 注意：
 
 列必须匹配。在WHERE子句中使用子查询，应保证 SELECT 语句具有与 WHERE 子句中相同数目的列。子查询可以单列与单列匹配，也可以多列与多列匹配。
+
+子查询可以多层嵌套，但是随着子查询嵌套层数的增加，SQL 语句会变得越来越难读懂，性能也会越来越差，因此尽量避免使用多层嵌套的子查询。
+
+## 标量子查询
+
+标量子查询就是返回单一值的子查询，即只返回 1 行 1列的结果。
+
+它可以用在能够使用常数或者列名的地 方，无论是 SELECT 子句、 GROUP BY 子句、 HAVING 子句，还是ORDER BY 子句，几乎所有的地方都可以使用。包括 WHERE 子句，可以规避 WHREE 子句不能使用聚合函数的情况。
+
+如：
+
+```mysql
+SELECT product_id, product_name, sale_price
+FROM Product
+WHERE sale_price > (SELECT AVG(sale_price)
+											FROM Product);
+```
+
+注意：
+
+绝对不能返回多行结果。
+
+## 关联子查询
+
+由于标量子查询只能返回单行数据，所以在细分的组内进行比较时，标量子查询并不使用，而需要使用关联子查询。
+
+关联子查询就是在子查询中多了一条WHERE语句的条件。
+
+如下：
+
+```mysql
+SELECT product_type, product_name, sale_price
+FROM Product AS P1
+WHERE sale_price > (SELECT AVG(sale_price)
+											FROM Product AS P2
+											WHERE P1.product_type = P2.product_type
+											GROUP BY product_type);
+```
+
+
 
 # 联结表
 外键(foreign key)：某个表中的一列，包含另一个表的主键值，定义了两个表的关系
@@ -721,6 +800,90 @@ mysql> select prod_name, vend_name, prod_price, quantity
 3. WHERE 子句定义联结条件比较简单；`INNER JOIN... ON...`语句能明确使用的联结条件，但有时候会影响性能
 4. 要注意考虑性能。不要联结不必要的表，联结的表越多，性能下降越厉害。
 5. 表别名只在查询执行中使用，与列别名不一样，表别名不返回到客户机。
+
+# 数据更新
+
+## 插入
+
+INSERT 语法如下：
+
+```mysql
+INSERT INTO < 表名 > ( 列 1 , 列 2 , 列 3 , ...... ) VALUES ( 值 1 , 值 2 , 值 3 , ...... );
+```
+
+字段数和值数必须保持一致，但是使用默认值时列数无需完全一致。
+
+如：
+
+```mysql
+INSERT INTO ProductIns 
+> (product_id, product_name, product_type, sale_price, purchase_price, regist_date)
+> VALUES ('0001', 'T 恤衫 ', ' 衣服 ', 1000, 500);
+```
+
+注：
+
++   对表进行全列 INSERT 时,可以省略表名后的列清单。这时 VALUES 子句的值会默认按照从左到右的顺序赋给每一列。
+
++   想给某一列赋予 NULL 值时,可以直接在 VALUES子句的值清单中写入 NULL 。
+
++   省略 INSERT 语句中的列名,就会自动设定为该列的默认值(没有默认值时会设定为 NULL )。
+
+## 删除
+
+ DROP TABLE 语句可以将表完全删除，而 DELETE 语句则会保留表的结构（容器），只是删除全部数据。
+
+```mysql
+DELETE FROM < 表名 >;
+
+# 指定删除对象的 DELETE 语句(搜索型 DELETE )
+DELETE FROM < 表名 > WHERE < 条件 >;
+```
+
+注：
+
++   DELETE 语句的删除对象并不是表或者列，而是记录(行)。
+
++   DELETE 语句中不能使用 GROUP BY 、HAVING 和 ORDER BY 三类子句,而只能使用 WHERE 子句。
+
+除了 DELETE 以外，Mysql 还有一个 TRUNCATE 语句用来删除。
+
+```mysql
+TRUNCATE < 表名 >;
+```
+
+它只能删除全部数据，而不能通过WHERE 子句指定条件来删除部分数据，但是也正因为如此，其处理速度要快得多。
+
+## 更新
+
+使用 UPDATE 语句来更新已有的数据。
+
+```mysql
+UPDATE < 表名 > SET < 列名 > = < 表达式 >;
+
+# 指定条件的 UPDATE 语句(搜索型 UPDATE )
+UPDATE < 表名 > SET < 列名 > = < 表达式 > WHERE < 条件 >;
+```
+
+使用 UPDATE 语句可以将值清空为 NULL (但只限于未设置 NOT NULL 约束的列)。
+
+## 事务
+
+事务是需要在同一个处理单元中执行的一系列更新处理的集合。
+
+使用事务开始语句和事务结束语句,将一系列 DML 语句( INSERT/UPDATE/DELETE 语句)括起来,就实现了一个事务处理。
+
+```mysql
+START TRANSACTION;
+	DML 语句1 ;
+	DML 语句2 ;
+	DML 语句3 ;
+事务结束语句( COMMIT 或者 ROLLBACK ) ;
+```
+
+COMMIT 是提交事务包含的全部更新处理的结束指令，相当于文件处理中的覆盖保存。一旦提交，就无法恢复到事务开始前的状态了。
+
+ROLLBACK 是取消事务包含的全部更新处理的结束指令，相当于文件处理中的放弃保存。一旦回滚，数据库就会恢复到事务开始之前的状态。通常回滚并不会像提交那样造成大规模的数据损失。
 
 # 其它
 
