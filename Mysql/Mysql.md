@@ -524,7 +524,7 @@ SUBSTRING (对象字符串 FROM 截取的起始位置 FOR 截取的字符数)
 
 
 
-## 日期和时间处理函数
+## 时间日期处理函数
 | 函数 | 说明 |
 | :---: | :---: |
 | AddDate() | 增加一个日期 |
@@ -760,18 +760,32 @@ WHERE sale_price > (SELECT AVG(sale_price)
 											GROUP BY product_type);
 ```
 
+# 集合运算
+
+集合最重要的性质之一就是去重，使用 UNION 可以实现多张表的并集（加法）运算。而 Mysql 目前还并不支持差集和补集的运算。
+
+如：
+
+```mysql
+select prod_id from productnotes 
+union 
+select prod_id from products;
+```
+
+注：
+
++   作为运算对象的记录的列数必须相同
++   作为运算对象的记录中列的类型必须一致
++   可以使用任何 SELECT 语句,但 ORDER BY 子句只能在最后使用一次
++   在集合运算符中使用 ALL 选项,可以保留重复行。(`Union All`)
+
 
 
 # 联结表
-外键(foreign key)：某个表中的一列，包含另一个表的主键值，定义了两个表的关系
 
-可伸缩性(scale)：能够适应不断增加的工作量而不失败
+## 普通的Where联结
 
-联结：联结是一种机制，用来在一条SELECT语句中关联表
-
-内部联结：也称等值联结，是基于两个表之间的相等测试
-
-笛卡尔积：由没有联结条件的表关系返回的结果。检索处的行的数目将是第一个表中的行数与第二个表行数的乘积
+集合运算是添加行的运算，而联结就是添加列的运算。联结就是讲根据多张表的字段进行整合和关联，合到一张表中。
 
 
 ```mysql
@@ -779,12 +793,6 @@ WHERE sale_price > (SELECT AVG(sale_price)
 mysql> select vend_name, prod_name, prod_price
     -> from vendors, products
     -> where vendors.vend_id = products.vend_id
-    -> order by vend_name, prod_name;
-
-# 明确内部联结的类型，语法稍有不同，但效果与上面的相同
-mysql> select vend_name, prod_name, prod_price
-    -> from vendors inner join products
-    -> on vendors.vend_id = products.vend_id
     -> order by vend_name, prod_name;
     
 # 联结多个表
@@ -795,11 +803,29 @@ mysql> select prod_name, vend_name, prod_price, quantity
     -> and order_num = 20005;
 ```
 注意：
-1. 应使用完全限定列名
+1. 应使用完全限定列名（< 表的别名 > . < 列名 >）
 2. 应保证所有联结都有 WHERE 子句
-3. WHERE 子句定义联结条件比较简单；`INNER JOIN... ON...`语句能明确使用的联结条件，但有时候会影响性能
-4. 要注意考虑性能。不要联结不必要的表，联结的表越多，性能下降越厉害。
+3. 要注意考虑性能。不要联结不必要的表，联结的表越多，性能下降越厉害。
 5. 表别名只在查询执行中使用，与列别名不一样，表别名不返回到客户机。
+
+## 内联结 - INNER JOIN
+
+进行内联结时必须使用 ON 子句，并且要书写在 FROM 和 WHERE 之间。
+
+```mysql
+# 明确内部联结
+select v.vend_name, p.prod_name, p.prod_price
+from vendors as v inner join products as p
+on v.vend_id = p.vend_id;
+```
+
+相比较使用where的联结，内联结明确使用的联结条件，但有时候会影响性能。
+
+## 外联结- OUTER JOIN
+
+内联结只能选取出同时存在于两张表中的数据，相反，对于外联结来说，只要数据存在于某一张表当中，就能够读取出来。
+
+外联结中使用 LEFT 、 RIGHT 来指定主表。使用 LEFT 时 FROM 子句中写在左侧的表是主表，使用 RIGHT 时右侧的表是主表。
 
 # 数据更新
 
