@@ -893,7 +893,7 @@ UPDATE < 表名 > SET < 列名 > = < 表达式 > WHERE < 条件 >;
 
 使用 UPDATE 语句可以将值清空为 NULL (但只限于未设置 NOT NULL 约束的列)。
 
-## 事务
+# 事务
 
 事务是需要在同一个处理单元中执行的一系列更新处理的集合。
 
@@ -910,6 +910,74 @@ START TRANSACTION;
 COMMIT 是提交事务包含的全部更新处理的结束指令，相当于文件处理中的覆盖保存。一旦提交，就无法恢复到事务开始前的状态了。
 
 ROLLBACK 是取消事务包含的全部更新处理的结束指令，相当于文件处理中的放弃保存。一旦回滚，数据库就会恢复到事务开始之前的状态。通常回滚并不会像提交那样造成大规模的数据损失。
+
+# 条件判断
+
+## IF 语句
+
+语法格式如下：
+
+```mysq
+IF(expr1,expr2,expr3)
+```
+
+若 expr1 为真(expr1 <> 0 且 expr1 <> NULL)，那么返回 expr2，否则返回 xpr3
+
+例如：
+
+```mysql
+select if(id, 1, null) from customers;
+```
+
+还有个 IFNULL() 函数用来替换 NULL 值，若 value1 不为null ，则返回 value1，否则返回value2
+
+```mysql
+IFNULL(value1,value2)
+```
+
+## IF..ELSE...
+
+IF...ELSE...做为流程控制语句使用，语法格式如下：
+
+```mysql
+IF search_condition THEN 
+    statement_list  
+[ELSEIF search_condition THEN]  
+    statement_list ...  
+[ELSE 
+    statement_list]  
+END IF
+```
+
+search_condition是一个条件表达式，可以由“=、<、<=、>、>=、!=”等条件运算符组成，并且可以使用AND、OR、NOT对多个表达式进行组合。
+
+## CASE..WHEN..
+
+句法一：
+
+```mysql
+CASE expression
+WHEN value1 THEN returnvalue1
+WHEN value2 THEN returnvalue2
+WHEN value3 THEN returnvalue3
+……
+ELSE defaultreturnvalue
+END
+```
+
+句法二：
+
+```mysql
+CASE
+WHEN condition1 THEN returnvalue1
+WHEN condition 2 THEN returnvalue2
+WHEN condition 3 THEN returnvalue3
+……
+ELSE defaultreturnvalue
+END
+```
+
+
 
 # 其它
 
