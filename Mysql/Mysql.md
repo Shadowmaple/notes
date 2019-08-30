@@ -15,21 +15,20 @@
 
 字句(clause) 用于构成sql语句
 
-## SQL
 SQL ：结构化查询语言(Structured Query Language)，是一种专门用来与数据库通信的语言
 
-## MySQL
-是一种数据库软件(DBMS)
+MySQL：是一种数据库软件(DBMS)
 
 # 安装
 
 >   [官网下载](https://dev.mysql.com/downloads/)
 >
->   [官网apt安装步骤](https://dev.mysql.com/doc/mysql-apt-repo-quick-guide/en/)
->
->   [安装笔记](https://github.com/Shadowmaple/notes/blob/master/Mysql/install.md)
+>   [安装步骤](https://github.com/Shadowmaple/notes/blob/master/Mysql/install.md)
+
+# 基本操作
 
 ## 启动&停止服务
+
 ```shell
 shell> sudo service mysql status
 shell> sudo service mysql stop
@@ -44,63 +43,13 @@ $ sudo mysql
 $ mysql -uroot -p
 ```
 
-## 导入样例数据
-
->   https://blog.csdn.net/duhena0384/article/details/80396542
-
-
-
-# 添加用户
-
-## 添加用户
-
-```mysql
-# 无密码登录
-create user 'lawler'@'localhost' identified by "";
-# 密码登录
-create user 'lawler'@'localhost' identified by "12345";
-```
-
-## 赋予权限
-
-```mysql
-# 所有权限
-grant all privileges on *.* to 'lawler'@'localhost';
-
-# 某项数据库所有权限
-GRANT privileges ON databasename.* TO 'username'@'host'
-
-# 数据库的某个表的查找和插入权限
-GRANT SELECT, INSERT ON databasename.tablename TO 'username'@'host'
-```
-
-注意：
-
-privileges - 用户的操作权限，如SELECT , INSERT , UPDATE 等。
-
-如果要授予所的权限则使用`ALL`；如果要授予该用户对所有数据库和表的相应操作权限则可用*表示，如*``.*.`。
-
-## 查看权限
-
-```mysql
-show grants for 'lawler'@'localhost'; 
-```
-
-## 删除用户
-
-```mysql
-drop user  'lawler'@'localhost'; 
-```
-
-# 基本操作
-
 ps：关键字都是大写，但因为大小写不敏感，所以可以用小写代替
 
-结束： ; 或 \g
+结束： `;` 或` \g`
 
-退出： quit 或 exit
+退出： `quit`或 `exit`
 
-帮助： help 或 \h
+帮助： `help` 或`\h`
 
 **注意：结尾要加分号( ; )！**
 
@@ -113,16 +62,20 @@ show columns from <table_name>;
 select * from <table_name>;
 select <column_name> from <table_name>;
 ```
+
 ```mysql
 help show;  #显示可用的show命令
 ```
 
+
+
 ## 创建数据库
+
 ```mysql
 Syntax:
-CREATE {DATABASE | SCHEMA} [IF NOT EXISTS] db_name
-    [create_specification] ...
+CREATE {DATABASE | SCHEMA} [IF NOT EXISTS] db_name [create_specification] ...
 ```
+
 例子
 
 ```mysql
@@ -142,7 +95,9 @@ mysql> show databases;
 +--------------------+
 5 rows in set (0.00 sec)
 ```
+
 ## 创建表
+
 ```mysql
 Syntax:
 CREATE [TEMPORARY] TABLE [IF NOT EXISTS] tbl_name
@@ -150,24 +105,27 @@ CREATE [TEMPORARY] TABLE [IF NOT EXISTS] tbl_name
     [table_options]
     [partition_options]
     
-CREATE TABLE < 表名 >
-(<列名1> < 数据类型 > < 该列所需约束 > ,
-<列名2> < 数据类型 > < 该列所需约束 > ,
-<列名3> < 数据类型 > < 该列所需约束 > );  
+CREATE TABLE <表名>
+(
+    <列名1> <数据类型> <该列所需约束> ,
+	<列名2> <数据类型> <该列所需约束> ,
+	<列名3> <数据类型> <该列所需约束>
+);  
 ```
+
 数据类型有 INTEGER, CHAR, DATE 等，约束条件有 NOT NULL, PRIMARY KEY (主键)，DEFAULT 0  等。
 
 例如：
 
 ```mysql
 create table Addressbook(
-    regist_no		integer 				not null,
-    name				varchar(128) 	not null,
-    address				varchar(256)	not null,
-    tel_no 					char(10),
-    mail_address	char(20), 
+    regist_no	 integer 	  not null,
+    name		 varchar(128) not null,
+    address		 varchar(256) not null,
+    tel_no 		 char(10),
+    mail_address char(20), 
     primary key (regist_no)
-) 
+);
 ```
 
 
@@ -196,8 +154,6 @@ ALTER TABLE < 表名 > DROP COLUMN < 列名 > ;
 alter table Addressbook add column (postal_code char(8) not null);
 ```
 
-
-
 ## 更改表名
 
 ```mysql
@@ -208,6 +164,54 @@ RENAME TABLE <原始表名> to <新表名>;
 
 1.  单行注释： `--`。要注意后面要空一格，否则不会认为是注释
 2.  多行注释：`/*` 和 `*/`。
+
+## 导入样例数据
+
+>   https://blog.csdn.net/duhena0384/article/details/80396542
+
+# 新用户
+
+## 添加用户
+
+```mysql
+# 无密码登录
+create user 'lawler'@'localhost' identified by "";
+# 密码登录
+create user 'lawler'@'localhost' identified by "12345";
+```
+
+## 赋予权限
+
+```mysql
+# 所有权限
+grant all privileges on *.* to 'lawler'@'localhost';
+
+# 某项数据库所有权限
+GRANT privileges ON databasename.* TO 'username'@'host'
+
+# 数据库的某个表的查找和插入权限
+GRANT SELECT, INSERT ON databasename.tablename TO 'username'@'host'
+```
+
+注意：
+
+privileges - 用户的操作权限，如SELECT , INSERT , UPDATE 等。
+
+如果要授予所的权限则使用`ALL`；如果要授予该用户对所有数据库和表的相应操作权限则可用表示，如 `*.*.`。
+
+## 查看权限
+
+```mysql
+show grants for 'lawler'@'localhost'; 
+```
+
+## 删除用户
+
+```mysql
+drop user 'lawler'@'localhost'; 
+```
+
+2.  
 
 # 检索数据
 
@@ -248,7 +252,9 @@ mysql> select prod_name from products limit 6, 3;
 # 上同，即为从行6取3行
 mysql> select prod_name from products limit 3 offset 6;
 ```
-**注意：从 0 行开始！第一行为行0，因此 LIMIT 1,1 将检索出第二行而不是第一行**
+注：
+
++   从 0 行开始！第一行为行0，因此 LIMIT 1,1 将检索出第二行而不是第一行
 
 ## 完全限定的列明和表名
 ```mysql
@@ -269,7 +275,7 @@ mysql> select prod_name from products order by prod_name DESC;
 
 # 多个排序键，首先价格排列，对相同的再进行字母排列
 mysql> select prod_id, prod_id, prod_name from products
-    ->  order by prod_price, prod_name;
+    -> order by prod_price, prod_name;
 ```
 注：
 
@@ -288,12 +294,12 @@ mysql> select prod_id, prod_id, prod_name from products
 ```mysql
 # 相等匹配
 mysql> select prod_name, prod_price from products 
-    ->  where prod_price = 2.5;
+    -> where prod_price = 2.5;
 
 # between, where 和 order by
 mysql> select prod_name, prod_price from products 
-    ->  where prod_price between 5 and 10
-    ->  order by prod_price;
+    -> where prod_price between 5 and 10
+    -> order by prod_price;
 
 # 若含有空值的列，则返回，否则不返回数据
 mysql> select cust_id
@@ -544,6 +550,7 @@ SUBSTRING (对象字符串 FROM 截取的起始位置 FOR 截取的字符数)
 | Second() | 返回秒部分|
 | Time() | 返回一个日期时间的时间部分|
 | Year() | 返回年份|
+| TO_DAYS(date) | 返回一个天数(从公元0年的天数) |
 
 ```mysql
 # 返回当前日期和时间
@@ -554,6 +561,14 @@ mysql> select now();
 | 2019-04-29 23:12:33 |
 +---------------------------+
 1 row in set (0.00 sec)
+
+# 两个日期之差
+select DateDiff('2019-02-03', '2019-02-04')
+# 返回-1
+
+# 返回天数，用在计算两个日期之差
+select to_days('2019-08-27')
+# 返回737663
 ```
 
 ## 数值处理函数
@@ -706,17 +721,22 @@ FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT
 
 ```mysql
 # 在WHERE子句中使用子查询，利用子查询实现过滤
-mysql> select cust_id from orders
-    -> where order_num in (select order_num
-    -> from orderitems
-    -> where prod_id = 'TNT2');
+select cust_id from orders
+    where order_num in (
+        select order_num
+    	from orderitems
+    	where prod_id = 'TNT2'
+    );
 
 # 作为计算字段使用子查询
-mysql> select cust_name, cust_state, 
-    -> (select count(*) from orders
-    -> where orders.cust_id = customers.cust_id) as orders
-    -> from customers
-    -> order by cust_name;
+select cust_name, cust_state, 
+(
+    select count(*)
+	from orders
+	where orders.cust_id = customers.cust_id
+) as orders
+from customers
+order by cust_name;
 ```
 注意：
 
@@ -736,7 +756,7 @@ mysql> select cust_name, cust_state,
 SELECT product_id, product_name, sale_price
 FROM Product
 WHERE sale_price > (SELECT AVG(sale_price)
-											FROM Product);
+	FROM Product);
 ```
 
 注意：
@@ -754,10 +774,12 @@ WHERE sale_price > (SELECT AVG(sale_price)
 ```mysql
 SELECT product_type, product_name, sale_price
 FROM Product AS P1
-WHERE sale_price > (SELECT AVG(sale_price)
-											FROM Product AS P2
-											WHERE P1.product_type = P2.product_type
-											GROUP BY product_type);
+WHERE sale_price > (
+    SELECT AVG(sale_price)
+	FROM Product AS P2
+	WHERE P1.product_type = P2.product_type
+	GROUP BY product_type
+);
 ```
 
 # 集合运算
@@ -781,9 +803,9 @@ select prod_id from products;
 
 
 
-# 联结表
+# 表联结
 
-## 普通的Where联结
+## Where 表联结
 
 集合运算是添加行的运算，而联结就是添加列的运算。联结就是讲根据多张表的字段进行整合和关联，合到一张表中。
 
@@ -810,7 +832,9 @@ mysql> select prod_name, vend_name, prod_price, quantity
 
 ## 内联结 - INNER JOIN
 
-进行内联结时必须使用 ON 子句，并且要书写在 FROM 和 WHERE 之间。
+实际上WHERE的联结也就是内联结，还有另一种使用 inner join 的内联结方式。
+
+该方式必须使用 ON 子句，并且要书写在 FROM 和 WHERE 之间。
 
 ```mysql
 # 明确内部联结
@@ -834,7 +858,7 @@ on v.vend_id = p.vend_id;
 INSERT 语法如下：
 
 ```mysql
-INSERT INTO < 表名 > ( 列 1 , 列 2 , 列 3 , ...... ) VALUES ( 值 1 , 值 2 , 值 3 , ...... );
+INSERT INTO <表名> (列1, 列2, ...) VALUES (值1, 值2, ...);
 ```
 
 字段数和值数必须保持一致，但是使用默认值时列数无需完全一致。
@@ -843,8 +867,8 @@ INSERT INTO < 表名 > ( 列 1 , 列 2 , 列 3 , ...... ) VALUES ( 值 1 , 值 2
 
 ```mysql
 INSERT INTO ProductIns 
-> (product_id, product_name, product_type, sale_price, purchase_price, regist_date)
-> VALUES ('0001', 'T 恤衫 ', ' 衣服 ', 1000, 500);
+(product_id, product_name, product_type, sale_price, purchase_price, regist_date)
+VALUES ('0001', 'T 恤衫 ', ' 衣服 ', 1000, 500);
 ```
 
 注：
@@ -860,10 +884,10 @@ INSERT INTO ProductIns
  DROP TABLE 语句可以将表完全删除，而 DELETE 语句则会保留表的结构（容器），只是删除全部数据。
 
 ```mysql
-DELETE FROM < 表名 >;
+DELETE FROM <表名>;
 
-# 指定删除对象的 DELETE 语句(搜索型 DELETE )
-DELETE FROM < 表名 > WHERE < 条件 >;
+# 指定删除对象的 DELETE 语句(搜索型DELETE)
+DELETE FROM <表名> WHERE <条件>;
 ```
 
 注：
@@ -875,7 +899,7 @@ DELETE FROM < 表名 > WHERE < 条件 >;
 除了 DELETE 以外，Mysql 还有一个 TRUNCATE 语句用来删除。
 
 ```mysql
-TRUNCATE < 表名 >;
+TRUNCATE <表名>;
 ```
 
 它只能删除全部数据，而不能通过WHERE 子句指定条件来删除部分数据，但是也正因为如此，其处理速度要快得多。
@@ -885,10 +909,10 @@ TRUNCATE < 表名 >;
 使用 UPDATE 语句来更新已有的数据。
 
 ```mysql
-UPDATE < 表名 > SET < 列名 > = < 表达式 >;
+UPDATE <表名> SET <列名> = <表达式>;
 
 # 指定条件的 UPDATE 语句(搜索型 UPDATE )
-UPDATE < 表名 > SET < 列名 > = < 表达式 > WHERE < 条件 >;
+UPDATE <表名> SET <列名> = <表达式> WHERE <条件>;
 ```
 
 使用 UPDATE 语句可以将值清空为 NULL (但只限于未设置 NOT NULL 约束的列)。
@@ -904,7 +928,7 @@ START TRANSACTION;
 	DML 语句1 ;
 	DML 语句2 ;
 	DML 语句3 ;
-事务结束语句( COMMIT 或者 ROLLBACK ) ;
+事务结束语句(COMMIT 或者 ROLLBACK) ;
 ```
 
 COMMIT 是提交事务包含的全部更新处理的结束指令，相当于文件处理中的覆盖保存。一旦提交，就无法恢复到事务开始前的状态了。
@@ -976,6 +1000,64 @@ WHEN condition 3 THEN returnvalue3
 ELSE defaultreturnvalue
 END
 ```
+
+# 存储过程
+
+存储过程的定义包含 in、out 和 inout 三种参数。IN 声明的是外界传递给存储过程的参数，OUT 声明的是传递给外界的参数，INOUT 的则对过程的传入和传出。
+
+给变量赋值都需要用 select into 语句。
+
+mysql 中的变量要以 @ 开头。
+
+```mysql
+# 创建存储过程，无参数
+create procedure procedure_1()
+	begin
+		select now();
+	end
+
+# 创建存储过程，有参数
+create procedure procedure_2( in time date, out num int)
+    begin
+        select count(*) from orders
+        where order_date < time
+        into num;
+    end
+    
+
+# 调用存储过程
+call procedure_1();
+call procedure_2("2018-01-01", @num);
+select @num;
+```
+
+注：
+
++   每次只能给一个变量赋值，不支持集合的操作。
+
++   命令行中创建存储过程需要自定义分隔符，因为命令行是以 ; 为结束符，而存储过程中也包含了分号，因此会错误把这部分分号当成是结束符，造成语法错误。
+
+在命令行定义存储过程：
+
+```mysql
+delimiter //
+
+create procedure procedure_1()
+	begin
+		select now();
+    end //
+    
+delimiter ;  
+```
+
+delimiter 用于声明语句的分隔符，第一个声明 `//` 作为新的分隔符，第二个则恢复分隔符 `;` 。
+
+```mysql
+# 删除存储过程
+drop procedure procedure_1;
+```
+
+
 
 
 
