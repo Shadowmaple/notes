@@ -41,7 +41,7 @@ $ ./bin/mongod -shutdown -f mongodb.conf
 注意：如果这样启动不了，试试加sudo。如果这样可以启动，就把文件权限者更改为非roo用户
 
 ## 操作
-```
+```shell
 show dbs
 db.foo.find()
 show collections
