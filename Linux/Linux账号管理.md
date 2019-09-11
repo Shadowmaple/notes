@@ -121,6 +121,7 @@ $ id [username]
 $ id lawler
 # 查看当前用户信息
 $ id
+uid=1000(lawler) gid=1000(lawler) groups=1000(lawler),4(adm),24(cdrom),27(sudo),30(dip),46(plugdev),116(lpadmin),126(sambashare),999(docker)
 ```
 
 chsh
@@ -137,6 +138,82 @@ $ chsh [-s]
 $ chsh -s /bin/zsh
 # 也可以不带参数，根据提示修改
 $ chsh
+```
+
+# 增删用户组
+
+## groupadd
+
+```shell
+$ groupadd [-g gid] [-r] 用户组
+
+选项与参数：
+-g ： 后接GID，用来直接设置某个GID
+-r ： 建立系统用户组，与 /etc/login.defs 内的GID_MIN有关
+
+# 示例
+$ groupadd group1
+```
+
+## groupmod
+
+用于修改 group 的相关参数
+
+```shell
+$ groupmod [-g gid] [-n group_name] 用户组
+
+选项与参数：
+-g ： 修改既有的GID数字
+-n ： 修改既有的用户组名称
+
+# 示例
+# 将group1名称改为test，GID为233
+$ groupmod -g 233 -n test group1
+```
+
+## groupdel
+
+删除用户组
+
+```shell
+$ groupdel 用户组
+```
+
+要注意，在删除用户组时，必须要确认 `/etc/passwd` 内的账号没有任何人使用该用户组作为初始用户组，否则无法删除。
+
+## 用户组管理员
+
+用户管理员可以管理该用户组内账号的加入或移除。设置用户管理员使用`gpasswd`。
+
+root用户的操作：
+
+```shell
+$ gpasswd [-A user1,...] [-M user2,...] 用户组
+$ gpasswd [-rR] 用户组
+
+选项与参数：
+   ： 若无任何参数，表示设置该用户组的密码
+-A ： 设置用户管理员
+-M ： 将账号加入该用户组
+-r ： 讲用户组的密码删除
+-R ： 讲用户组的密码栏失效
+
+# 示例
+# root用户
+$ gpasswd -A lawler test
+```
+
+用户管理员的功能：
+
+```shell
+$ gpasswd [-ad] user 用户组
+
+选项与参数：
+-a ： 将用户加入用户组
+-d ： 将用户删除用户组
+
+# 示例
+$ gpasswd -a nick test 
 ```
 
 
