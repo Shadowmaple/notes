@@ -1,5 +1,7 @@
 # Linux的文件权限
 
+___
+
 # 权限身份
 
 三种身份：
@@ -101,4 +103,94 @@ $ chmod 654 test.sh     # 更改后为 -rw-r-xr--
 $ chmod u=rwx,go=rx test.sh     # 设置user为读写执行，用户组和其他为读执行
 $ chmod -R a+x blog/       # 都加上可执行权限（该目录递归添加）
 ```
+
+
+
+# ACL权限规划
+
+ACL（Access Control List），访问控制列表，是主要用于提供传统的所属用户、群组和其他人的读写、执行三个基本权限之外的更加详细和具体的权限设置。它可以针对但以用户、单一文件或目录进行读写和执行的权限设置。
+
+ACL可以针对以下三个方面来进行权限控制：
+
++   用户（user）
++   用户组（group）
++   默认属性（mask）：在目录下新建文件和目录时，规范新数据的默认权限
+
+查看当前文件系统是否支持ACL：
+
+```shell
+$ dmesg | grep -i acl
+```
+
+设置ACL规范
+
+使用`setfacl`命令来设置ACL
+
+```shell
+$ setfacl [-bkRd] [{-m|-x} acl参数] 文件名
+
+选项与参数：
+-m ：设置后续的ACL参数
+-x ：删除后续的ACL参数
+-b ：删除所有的ACL设置参数
+-k ：删除默认的ACL参数
+-R ：递归设置ACL
+-d ：设置默认ACL参数，只对目录有效，在该目录新建的数据会引用该默认值
+```
+
+示例
+
+```shell
+# 针对特定使用者的设置
+# 设置规范：u:[使用者账号列表]:[rwx]
+$ setfacl -m u:lawler:r test.md
+$ ll test.md 
+-rw-rw-r--+ 1 lawler lawler 0 9月  12 21:04 test.md
+
+# 针对特定用户组的方式
+# 设置规范：g:[用户组列表]:[rwx]
+$ setfacl -m g:group1:rx test/
+
+# 针对有效权限设置
+# 设置规范：m:[rwx]
+$ setfacl -m m:r test.md
+
+# 针对默认权限的设置
+# 设置规范：d:[ug]:[使用者列表]:[rwx]
+# 设置让lawler用户在test/下一直具有rw的默认权限
+$ setfacl -m d:u:lawler:rw test/
+```
+
+设置后查看属性会发现其后带有 + 号，这就是ACL设置的标志。
+
+针对有效权限的设置就是设置默认的有效权限（mask），有效权限就是用户或用户组所设置的权限必须要存在于mask的权限设置范围内才能生效的最大权限，即权限“天花板”。一般来说都是将mask设置为rwx的。
+
+使用默认权限设置的方式（`d:[ug]:[使用者]:[rwx]`），可以让ACL的权限设置被子目录/子文件所继承，即新建的文件目录都具有设置的ACL权限。如果未使用默认权限设置，则新建的目录将不具备ACL权限的设置。ACL的权限设置默认不继承。
+
+
+
+查看ACL设置
+
+使用`getfacl`来获取ACL设置选项
+
+```shell
+$ getfacl filename
+
+# 示例
+$ getfacl test.md 
+# file: test.md
+# owner: lawler
+# group: lawler
+user::rw-
+user:lawler:r--
+group::rw-
+mask::rw-
+other::r--
+```
+
+显示的数据前面带#号的，代表该文件的默认属性。
+
+在owner为lawler的情况下，又设置ACL权限，lawler为只读（r），但是实际上是可以写入的，也就是说，ACL权限设置的优先级低于传统的文件权限。
+
+注：在用ACL设置一个用户/用户组没有任何权限时，权限的字段不可留白，而应加上一个 `-`
 
