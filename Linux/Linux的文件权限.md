@@ -3,15 +3,15 @@
 # 权限身份
 
 三种身份：
-1. 用户 User
-2. 群组 Group
-3. 其他人 Others
+1. 用户 （User）
+2. 群组 （Group）
+3. 其他人 （Others）
 
 用户身份和用户组记录的文件：
 
-+ /etc/passwd ： 存储系统账户、一般用户和root账户的相关信息（默认情况下）
-+ /etc/shadow ： 记录个人密码
-+ /etc/group ： 记录所有组名
++ `/etc/passwd` ： 存储系统账户、一般用户和root账户的相关信息（默认情况下）
++ `/etc/shadow` ： 记录个人密码
++ `/etc/group` ： 记录所有组名
 
 # 文件属性
 ```shell
@@ -63,7 +63,7 @@ chgrp： 修改文件所属用户组
 chown： 修改文件拥有者以及用户组
 chmod： 修改文件权限
 
-## chgrp
+## chgrp - 修改文件所属用户组
 
 ```shell
 # 格式
@@ -72,7 +72,7 @@ $ chgrp [option] grouup filename
 # -R 为递归修改
 $ chgrp -R lawler blog/
 ```
-## chown
+## chown - 修改文件拥有者以及用户组
 
 ```shell
 # 格式
@@ -82,7 +82,7 @@ $ chown [option] user:group filename    # 也可用小数点[.]来间隔
 # 例子
 # chown lawler:lawler test.c
 ```
-## chmod
+## chmod - 修改文件权限
 数字类型权限表示：`rwx` --> 421
 符号类型权限表示：
 
@@ -101,3 +101,4 @@ $ chmod 654 test.sh     # 更改后为 -rw-r-xr--
 $ chmod u=rwx,go=rx test.sh     # 设置user为读写执行，用户组和其他为读执行
 $ chmod -R a+x blog/       # 都加上可执行权限（该目录递归添加）
 ```
+
