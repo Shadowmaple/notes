@@ -328,5 +328,7 @@ $ gpasswd [-ad] user 用户组
 $ gpasswd -a nick test 
 ```
 
+# 用户身份切换
 
+可利用`su`或`sudo`来切换用户
 
