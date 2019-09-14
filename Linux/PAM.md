@@ -111,3 +111,9 @@ PAM控制标识的返回流程：
     3.  登录成功后开始记录相关信息到日志文件中
     4.  以`pam_loginuid.so`规范不同的UID权限
     5.  开启`pam_selinux.so`的功能
+
+# 参考
+
++   https://www.jianshu.com/p/760f239be916
++   https://www.ibm.com/developerworks/cn/linux/l-cn-pam/index.html
++   https://www.ibm.com/developerworks/cn/linux/l-pam/index.html
