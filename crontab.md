@@ -17,8 +17,6 @@ systemctl start atd
 systemctl stop atd
 ```
 
-
-
 at用法
 
 ```shell
@@ -76,18 +74,13 @@ job 4 at Sat Sep 14 21:37:00 2019
 # 循环计划任务
 
 
-
-# crontab
-
-
 修改默认编辑器：`select-editor`
 
-# 基本指令
+## 基本指令
+
+cron服务指令
 
 ```shell
-crontab -l
-crontab -e
-crontab -r
 service cron start
 service cron restartw
 service cron stop
@@ -95,5 +88,88 @@ service cron status
 service cron reload
 ```
 
-# 代码演示
+crontab操作指令
+
+```shell
+$ crontab [-u username] [-l|-e|-r]
+选项与参数:
+-u ：root身份，操作其它用户的crontab任务
+-l ：列出任务内容
+-e ：编辑任务
+-r ：删除所有任务
+
+# 示例
+crontab -l
+crontab -e
+```
+
+`/etc/cron.deny`：写入的账号禁止使用crontab
+
+当用户使用crontab来建立计划任务之后，该任务就会被记录到`/var/spool/cron`中，且是以账号来作为判断依据的。
+
+命令执行时，最好使用绝对路径
+
+## 系统配置文件
+
+`/etc/crontab`：系统的例行性任务
+
+cron服务的最低检测限制是分钟，所以cron会每分钟去读取一次`/etc/crontab/`和`/var/spool/cron`里面的数据内容
+
+查看`/etc/crontab`文件：
+
+```shell
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+# m h dom mon dow user	command
+17 *	* * *	root    cd / && run-parts --report /etc/cron.hourly
+```
+
+和用户的配置文件相比，多了一项用户字段，代表执行命令的用户身份
+
+cron默认有三个地方会执行脚本配置文件：
+
++   `/etc/crontab`
++   `/etc/cron.d/*`
++   `/var/spool/cron/*`（不同发行版会不相同）
+
+使用总结：
+
++   个人化操作使用`crontab -e`
++   系统维护管理使用`vi /etc/crontab`
++   自己开发软件使用`vi /etc/cron.d/newfile`
+
+## 配置演示
+
 [crontab parser](https://crontab.guru/#0_*_*_*_*)
+
+# 停机期间任务的唤醒
+
+使用`anacron`，可以将因为某些原因（如停机）导致的超过时间而未执行的任务唤醒，重新执行。
+
+anacron也是每小时被cron执行一次，然后anacron再去检测相关的计划任务是否被执行，若有，则执行，完毕后便停止。
+
+```shell
+$ anacron [-sfn] [job]
+$ anacron -u [job]
+
+选项与参数：
+-s ：开始连续执行各项任务，会根据时间判断是否执行
+-f ：强制执行，而不去判断时间记录文件的时间戳
+-n ：立刻执行未执行的任务，而不延迟等待时间
+-u ：仅更新事件记录文件的时间戳，不执行任何任务
+```
+
+```shell
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+HOME=/root
+LOGNAME=root
+
+# 天数 延迟时间 工作名称 执行的命令串
+1   5   cron.daily  run-parts --report /etc/cron.daily
+7   10  cron.weekly run-parts --report /etc/cron.weekly
+@monthly    15  cron.monthly    run-parts --report /etc/cron.monthly
+```
+
+延迟时间是为了防止和其它资源的冲突，单位为分钟
