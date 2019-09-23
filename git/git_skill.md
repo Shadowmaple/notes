@@ -29,7 +29,7 @@ git checkout c1         # 将HEAD指向c1提交记录
 git checkout master^    # 将HEAD指向master的父节点（上一个提交）
 git checkout -f master HEAD~3       # 将master强制转到HEAD指向的前3级父节点
 
-git reset HEAD         # 撤销当前记录，回退到上一次提交，但这只是本地的操作，不便于远程合作
+git reset HEAD^         # 撤销当前记录，回退到上一次提交，但这只是本地的操作，不便于远程合作
 git revert c2           # 重新建立一次上次状态的提交，即远程回退到前一提交
 
 git cherry-pick c2 c4 c5    # 将记录c2 c4 c5追加到当前分支上
