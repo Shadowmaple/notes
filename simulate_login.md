@@ -12,11 +12,7 @@
 
 打开豆瓣，按下 F12 （Fn+F12），审查元素，在最上面的一栏选择网络（Network），可以按下 Ctrl+R 刷新一下，然后就可以看到下方的列表里有很多条目，这些都是该网页在获取数据时请求的痕迹。
 
-
-
 ![](https://raw.githubusercontent.com/Shadowmaple/myDocuments/master/images/muxi_work/browser_inspect1.png)
-
-
 
 现在不要关闭开发者模式（审查元素界面），填入豆瓣账号和密码，点击登录，然后你会看到右边的界面重新进行了载入。
 
@@ -28,7 +24,7 @@
 
 # 模拟登录请求
 
-找到了验证的url后，我们不应该马上动手写代码，而是应该用 postman 来进行模拟请求，确认是否可以成功通过验证。
+找到了验证的 url 后，我们不应该马上动手写代码，而是应该用 postman 来进行模拟请求，确认是否可以成功通过验证。
 
 >   postman请自行去[官网下载](https://www.getpostman.com/downloads/)
 
@@ -83,6 +79,12 @@ ticket:
 既然模拟请求已经成功，那么就可以用代码实现了。
 
 要用到的包有：`net/http`，`net/url`，`io/ioutil`
+
+>   net/http [官方文档](https://godoc.org/net/http)
+>
+>   net/url [官方文档](https://godoc.org/net/url)
+>
+>   io/ioutil [官方文档](https://golang.org/pkg/io/ioutil/)
 
 ```go
 // 请求url
@@ -154,9 +156,11 @@ fmt.Println(string(body))
 {"status":"success","message":"success","description":"处理成功","payload":{"account_info":{"name":"愆不阙","weixin_binded":true,......以下省略......}}}
 ```
 
-## 完善
+## 优化
 
-虽然实现了请求，但还有一个问题需要完善一下，那就是我们的账号和密码是写在代码中的，极不安全。我们可以通过交互模式让用户在终端输入。另外密码的输入应当是隐性的、保密的，这就用到了 [`gopass`库](https://github.com/howeyc/gopass)。
+虽然实现了请求，但还有一个问题需要完善一下，那就是我们的账号和密码是写在代码中的，极不安全。我们可以通过交互模式让用户在终端输入。另外密码的输入应当是隐性的、保密的，这就用到了 [`gopass`库](https://github.com/howeyc/gopass)。gopass 库的使用算是非常简单的了，自己看文档吧。
+
+>   gopass [官方文档](https://godoc.org/github.com/howeyc/gopass)
 
 实现输入：
 
