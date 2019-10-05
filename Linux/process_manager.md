@@ -137,7 +137,7 @@ nohup 与终端无关，其信息的输出默认会被定向至`nohup.out`文件
 
 # 进程管理
 
-查看进程
+## 查看进程
 
 ps：静态查看某个时间点的进程
 
@@ -202,6 +202,8 @@ $ pstree
 -u：同时列出进程所属的账号名称
 ```
 
+## kill进程
+
 signal
 
 | 代号 | 名称    | 内容                                                      |
@@ -226,39 +228,7 @@ $ killall -signal
 $ killall -i -9 bash
 ```
 
-
-
-/proc/*
-
-进程都是在内存当中，而内存当中的数据又都是写入到`/proc/*`该目录下
-
-当前主机上的各个进程的PID都以目录的形式存在于 `/proc`当中
-
-```shell
-$ sudo ls -l /proc/1
-total 0
-dr-xr-xr-x 2 root root 0 10月  3 10:50 attr
--rw-r--r-- 1 root root 0 10月  3 10:56 autogroup
--r-------- 1 root root 0 10月  3 10:56 auxv
--r--r--r-- 1 root root 0 10月  3 10:50 cgroup
---w------- 1 root root 0 10月  3 10:56 clear_refs
--r--r--r-- 1 root root 0 10月  3 10:50 cmdline
--rw-r--r-- 1 root root 0 10月  3 10:50 comm
--rw-r--r-- 1 root root 0 10月  3 10:56 coredump_filter
--r--r--r-- 1 root root 0 10月  3 10:56 cpuset
-lrwxrwxrwx 1 root root 0 10月  3 10:56 cwd -> /
--r-------- 1 root root 0 10月  3 10:50 environ
-lrwxrwxrwx 1 root root 0 10月  3 10:50 exe -> /lib/systemd/systemd
-dr-x------ 2 root root 0 10月  3 10:50 fd
-.....(省略)
-```
-
-其中：
-
-+   cmdline：该进程被启动的命令串
-+   environ：该进程的环境变量
-
-
+## 其它
 
 fuser：借由文件或文件系统找出正在使用该文件的进程
 
@@ -299,4 +269,38 @@ pidof：找出正在执行的进程的PID
 $ pidof zsh
  4382
 ```
+
+
+
+# /proc/*
+
+进程都是在内存当中，而内存当中的数据又都是写入到`/proc/*`该目录下
+
+当前主机上的各个进程的PID都以目录的形式存在于 `/proc`当中
+
+```shell
+$ sudo ls -l /proc/1
+total 0
+dr-xr-xr-x 2 root root 0 10月  3 10:50 attr
+-rw-r--r-- 1 root root 0 10月  3 10:56 autogroup
+-r-------- 1 root root 0 10月  3 10:56 auxv
+-r--r--r-- 1 root root 0 10月  3 10:50 cgroup
+--w------- 1 root root 0 10月  3 10:56 clear_refs
+-r--r--r-- 1 root root 0 10月  3 10:50 cmdline
+-rw-r--r-- 1 root root 0 10月  3 10:50 comm
+-rw-r--r-- 1 root root 0 10月  3 10:56 coredump_filter
+-r--r--r-- 1 root root 0 10月  3 10:56 cpuset
+lrwxrwxrwx 1 root root 0 10月  3 10:56 cwd -> /
+-r-------- 1 root root 0 10月  3 10:50 environ
+lrwxrwxrwx 1 root root 0 10月  3 10:50 exe -> /lib/systemd/systemd
+dr-x------ 2 root root 0 10月  3 10:50 fd
+.....(省略)
+```
+
+其中：
+
++   cmdline：该进程被启动的命令串
++   environ：该进程的环境变量
+
+
 
