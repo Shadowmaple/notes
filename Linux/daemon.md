@@ -1,5 +1,7 @@
 # 系统服务
 
+# daemon服务
+
 +   `/lib/systemd/system/`：各个服务最主要的启动脚本设置
 +   `/etc/systemd/system`：管理员根据主机系统的需求所建立的执行脚本，优先级比`/lib/systemd/system/`高
 
@@ -15,6 +17,8 @@ systemd 的unit 类型分类
 | .mout<br>.automount | 文件系统挂载相关的服务，如来自网络的自动挂载、NFS文件系统挂载与文件系统相关性较高的进程管理 |
 | .path | 检测特定文件或目录类型 |
 | .timer | 循环执行的服务，由System主动提供的crontab功能 |
+
+# systemctl 命令使用
 
 基本上，Systemd这个启动服务的机制，主要是通过 systemctl 命令来完成。和以前的`System V`需要 service、chkconfig、setup、init 等命令来协助不同，Systemd 只有 systemctl 这一个命令来处理。
 
@@ -105,3 +109,51 @@ $ systemctl list-dependencies multi-user.target --reverse
 +   [Service]、[Socket]、[Timer]、[Mount]、[Path]：不同 unit 类型的不同设置项目。主要用来规范服务启动的脚本、环境配置文件、重新启动的方式等
 +   [Install]：将此unit放入哪个target中去
 
+
+
+# 自己动手写一个service
+
+在`/etc/systemd/system/`中建立一个service文件
+
+```shell
+$ vi /etc/systemd/system/test.service
+```
+
+`test.service`内容：
+
+```shell
+[Unit]
+Description="daemon test---"
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/home/lawler/a.out
+Restart=on-failure
+RestartSec=1000
+
+[Install]
+WantedBy=multi-user.target
+```
+
+其中`a.out`可执行文件是一个C语言文件编译产生的，作用是打印出“Hello, world”
+
+```shell
+# 重载服务模块
+$ sudo systemctl daemon-reload
+
+# 启动
+$ sudo systemctl start test.service
+# 查看状态
+$ systemctl status test.service 
+● test.service - "daemon test---"
+   Loaded: loaded (/etc/systemd/system/test.service; disabled; vendor preset: enabled)
+   Active: inactive (dead)
+
+10月 06 14:36:07 lawler-Inspiron-7472 systemd[1]: Started "daemon test---".
+10月 06 14:36:07 lawler-Inspiron-7472 a.out[26903]: Hello, world!
+```
+
+可以看到已经执行了`a.out`并打印出了“Hello, world”。
+
+因为执行的是一个简单的脚本，执行完毕就完了，不会继续常驻在内存中，所以状态是 inactive
