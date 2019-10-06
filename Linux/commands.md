@@ -24,6 +24,12 @@
 +   grep
 +   ln：创建链接
 
+## 关机
+
++   shutdown
++   poweroff
++   reboot
+
 ## 压缩
 
 +   tar
