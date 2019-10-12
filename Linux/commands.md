@@ -23,6 +23,7 @@
 +   which
 +   grep
 +   ln：创建链接
++   file
 
 ## 关机
 
