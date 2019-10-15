@@ -26,7 +26,7 @@ docker run -p 8000:5000 -it --rm homeworks:v1
 docker run -p 8000:5000 --name HomeWorks -it --rm homeworks:v1
 docker run -p 8000:5000 --name HomeWorks -it --rm homeworks:v1 flask run
 ```
-docker 内的程序 ip 要用 **0.0.0.0** !!!
+docker 内的程序暴露的 ip 地址要用 **0.0.0.0** !!!
 
 清除所有镜像文件
 ```shell
@@ -46,3 +46,16 @@ EXPOSE 5000
 RUN pip3 install -r requirements.txt
 CMD flask run -h 0.0.0.0 -p 5000
 ```
+
+查看正在运行的容器
+
+```shell
+docker ps
+```
+
+停止运行
+
+```shell
+docker stop [CONTAINER ID]
+```
+
