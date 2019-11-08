@@ -66,7 +66,7 @@
 
 
 
-![](https://raw.githubusercontent.com/Shadowmaple/mydocuments/master/images/blog/process_thread_coroutine.jpeg)
+![](./images/process_thread_coroutine.jpeg)
 
 
 
