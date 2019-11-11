@@ -59,6 +59,15 @@ fmt.Println(content)
 
 >   goquery [使用文档](https://godoc.org/github.com/PuerkitoBio/goquery)
 
+导入包：
+
+```go
+import (
+    // ...
+	"github.com/PuerkitoBio/goquery"
+)
+```
+
 代码：
 
 ```go
