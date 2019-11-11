@@ -64,7 +64,7 @@ fmt.Println(content)
 ```go
 import (
     // ...
-	"github.com/PuerkitoBio/goquery"
+    "github.com/PuerkitoBio/goquery"
 )
 ```
 
