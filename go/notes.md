@@ -13,9 +13,10 @@ string := strconv.FormatInt(int64,10)
 strconv.ParseFloat(s string, bitSize int) (f float64, err error) 
 ```
 # 字符串拼接
-1. \+ 号连接，低效
-2. strings.Join()，高效
-3. 字节缓冲（bytes.Buffer），更高效
+1. `fmt.Sprintf`，低效
+2. \+ 号连接，低效
+3. `strings.Join()`，高效
+4. 字节缓冲（`bytes.Buffer`），更高效
 
 # strings包
 ## 前缀和后缀
@@ -31,32 +32,48 @@ strings.Contains(s, substr string) bool
 ```
 ## 判断子字符串或字符在父字符串中出现的位置（索引）
 Index 返回字符串 str 在字符串 s 中的索引（str 的第一个字符的索引），-1 表示字符串 s 不包含字符串 str
+```go
 strings.Index(s, str string) int
+```
 
 LastIndex 返回字符串 str 在字符串 s 中最后出现位置的索引（str 的第一个字符的索引），-1 表示字符串 s 不包含字符串 str
+```go
 strings.LastIndex(s, str string) int
-
+```
 如果 ch 是非 ASCII 编码的字符，建议使用以下函数来对字符进行定位
-strings.IndexRune(s string, ch int) int
 
+```go
+strings.IndexRune(s string, ch int) int
+```
 ## 字符串替换
 Replace 用于将字符串 str 中的前 n 个字符串 old 替换为字符串 new，并返回一个新的字符串，如果 n = -1 则替换所有字符串 old 为字符串 new
+
+```go
 strings.Replace(str, old, new, n) string
+```
 
 ## 统计字符串出现次数
 Count 用于计算字符串 str 在字符串 s 中出现的非重叠次数
+```go
 strings.Count(s, str string) int
+```
 
 ## 重复字符串
 Repeat 用于重复 count 次字符串 s 并返回一个新的字符串
+```go
 strings.Repeat(s, count int) string
+```
 
 ## 修改字符串大小写
 ToLower 将字符串中的 Unicode 字符全部转换为相应的小写字符
+```go
 strings.ToLower(s) string
+```
 
 ToUpper 将字符串中的 Unicode 字符全部转换为相应的大写字符
+```go
 strings.ToUpper(s) string
+```
 
 ## 修剪字符串
 你可以使用 strings.TrimSpace(s) 来剔除字符串开头和结尾的空白符号；如果你想要剔除指定字符，则可以使用strings.Trim(s, "cut") 来将开头和结尾的 cut 去除掉。该函数的第二个参数可以包含任何字符，如果你只想剔除开头或者结尾的字符串，则可以使用 TrimLeft 或者 TrimRight 来实现
@@ -84,7 +101,7 @@ ReadByte() 和 ReadRune() 从字符串中读取下一个 byte 或者 rune
 
 ```go
 fmt.Print()//不换行输出
-fmt.Println()//换行输出
+fmt.Println()//换行输出strings.Count(s, str string) int
 fmt.Scan(&a)
 fmt.Scanf("%d",&a)
 fmt.Printf("%c",a)
