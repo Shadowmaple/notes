@@ -249,6 +249,18 @@ value := i.(int)
 value, ok := i.(int)
 ```
 
+# 查看变量地址
+
+使用`unsafe.Pointer()`
+
+```go
+num := 1
+fmt.Println(unsafe.Pointer(&num))
+
+// 输出：
+// 0xc000344880
+```
+
 
 
 # 在线测试
