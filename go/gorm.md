@@ -26,3 +26,17 @@ func (evaluation *CourseEvaluationModel) TableName() string {
 ```
 
 如上，定义的结构体名为`CourseEvaluationModel`，只要声明一个方法`TableName`，返回数据库的表名`course_evaluation`即可。
+
+## DB语句顺序
+
+```go
+// 这样order语句起不了作用
+DB.Self.Find(&subComments, "parent_id = ?", ParentId).Order("time")
+
+// 要这样
+DB.Self.Order("time").Find(&subComments, "parent_id = ?", ParentId)
+
+// where语句最好单独提出来
+DB.Self.Where("parent_id = ?",ParentId).Order("time").Find(&subComments)
+```
+
