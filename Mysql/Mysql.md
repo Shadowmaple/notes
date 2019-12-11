@@ -128,12 +128,50 @@ create table Addressbook(
 );
 ```
 
-
-
 ## 删除表
 
 ```mysql
 DROP TABLE  <表名>;
+```
+
+## 查看表的定义
+
+### 查询结果显示
+
+```mysql
+desc <表名>;
+describe <表名>;
+show columns from <表名>;
+
+-- 结果：
++------------+------------------+------+-----+---------+----------------+
+| Field      | Type             | Null | Key | Default | Extra          |
++------------+------------------+------+-----+---------+----------------+
+| id         | int(10) unsigned | NO   | PRI | <null>  | auto_increment |
+| sid        | varchar(10)      | NO   |     | <null>  |                |
+| username   | varchar(25)      | YES  |     | <null>  |                |
+| avatar     | varchar(255)     | YES  |     | <null>  |                |
+| is_blocked | tinyint(4)       | NO   |     | 0       |                |
++------------+------------------+------+-----+---------+----------------+
+```
+
+### SQL语句显示
+
+```mysql
+show create table <表名>;
+
+-- 结果：
++-------+--------------------------------------------------------+
+| Table | Create Table                                           |
++-------+--------------------------------------------------------+
+| user  | CREATE TABLE `user` (                                  |
+|       |   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,       |
+|       |   `sid` varchar(10) NOT NULL COMMENT '学生学号',        |
+|       |   `username` varchar(25) DEFAULT NULL,                 |
+|       |   `avatar` varchar(255) DEFAULT NULL,                  |
+|       |   `is_blocked` tinyint(4) NOT NULL DEFAULT '0',        |
+|       |   PRIMARY KEY (`id`)                                   |
+|       | ) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci |
 ```
 
 ## 更新表的定义
@@ -141,17 +179,30 @@ DROP TABLE  <表名>;
 在表创建完成之后才发现字段多了或者少了，这时候无需删表重新创建，只要对表更新定义即可。
 
 ```mysql
-# 添加字段
+-- 添加字段
 ALTER TABLE < 表名 > ADD COLUMN < 列的定义 > ;
 
-# 删除字段
+-- 删除字段
 ALTER TABLE < 表名 > DROP COLUMN < 列名 > ;
+
+-- 字段重命名
+ALTER TABLE <表名> CHANGE COLUMN <列名> <新列名> <类型>;
+
+-- 更改字段类型
+ALTER TABLE <表名> MODIFY COLUMN <列名> <类型>;
 ```
 
 如：
 
 ```mysql
-alter table Addressbook add column (postal_code char(8) not null);
+-- 添加字段
+alter table Addressbook add column (postal_code varchar(8) not null);
+
+-- 字段重命名
+alter table users change column name nickname varchar(8);
+
+-- 更改字段类型
+alter table user modify column name varchar(10) not null;
 ```
 
 ## 更改表名
@@ -174,9 +225,9 @@ RENAME TABLE <原始表名> to <新表名>;
 ## 添加用户
 
 ```mysql
-# 无密码登录
+-- 无密码登录
 create user 'lawler'@'localhost' identified by "";
-# 密码登录
+-- 密码登录
 create user 'lawler'@'localhost' identified by "12345";
 ```
 
