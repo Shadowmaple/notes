@@ -151,7 +151,7 @@ show columns from <表名>;
 | sid        | varchar(10)      | NO   |     | <null>  |                |
 | username   | varchar(25)      | YES  |     | <null>  |                |
 | avatar     | varchar(255)     | YES  |     | <null>  |                |
-| is_blocked | tinyint(4)       | NO   |     | 0       |                |
+| is_blocked | tinyint(1)       | NO   |     | 0       |                |
 +------------+------------------+------+-----+---------+----------------+
 ```
 
