@@ -950,6 +950,10 @@ on v.vend_id = p.vend_id;
 
 外联结中使用 LEFT 、 RIGHT 来指定主表。使用 LEFT 时 FROM 子句中写在左侧的表是主表，使用 RIGHT 时右侧的表是主表。
 
+## 自联结
+
+除了不同表之间可以联结以外，单个表也可以实现自联结。
+
 # 数据更新
 
 ## 插入
@@ -1104,27 +1108,27 @@ END
 
 存储过程的定义包含 in、out 和 inout 三种参数。IN 声明的是外界传递给存储过程的参数，OUT 声明的是传递给外界的参数，INOUT 的则对过程的传入和传出。
 
-给变量赋值都需要用 select into 语句。
+给变量赋值都需要用 `select into` 语句。
 
 mysql 中的变量要以 @ 开头。
 
 ```mysql
-# 创建存储过程，无参数
+-- 创建存储过程，无参数
 create procedure procedure_1()
 	begin
 		select now();
 	end
 
-# 创建存储过程，有参数
+-- 创建存储过程，有参数
 create procedure procedure_2( in time date, out num int)
     begin
         select count(*) from orders
         where order_date < time
         into num;
-    end
+    end的分隔符，第一个声明 // 作为新
     
 
-# 调用存储过程
+-- 调用存储过程
 call procedure_1();
 call procedure_2("2018-01-01", @num);
 select @num;
@@ -1152,7 +1156,7 @@ delimiter ;
 delimiter 用于声明语句的分隔符，第一个声明 `//` 作为新的分隔符，第二个则恢复分隔符 `;` 。
 
 ```mysql
-# 删除存储过程
+-- 删除存储过程
 drop procedure procedure_1;
 ```
 
