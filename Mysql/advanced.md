@@ -156,6 +156,75 @@
     +   文件长度受文件系统最大长度限制
     +   特殊字符的处理（非拉丁字母和数字被映射为`@+编码值`）
 
+# InnoDB的表空间
+
+## 独立表空间
+
+1.  **区（extent）**，用于管理页。连续64个页为一个区，默认占用1MB。每256个区归为一组。表空间是由若干个区或若干个组构成的。
+
+2.  第一组中最开始的三个页面类型固定：`FSP_HDR`类型、`IBUF_BITMAP`类型、`INODE`类型。之后组的前两个页面类型固定：`XDES`类型、`BUF_BITMAP`类型。
+
+3.  **碎片区（fragment）**，直属于表空间。在一个碎片区中，页的类型和目的是随意的。
+
+4.  **段（segment）是若干完整的区和部分碎片区中零散的页的集合**。每个索引占两个段，叶子节点和非叶子节点占用两个不同的段。
+
+5.  为某个段分配存储空间的策略：
+
+    +   在刚开始向表中插入数据的时候，段从某个碎片区以单个页面为单位来分配存储空间
+    +   当某个段已经占用了32个碎片区页面之后，就会以完整的区为单位来分配存储空间
+
+6.  区大致可分为四类：
+
+    +   空闲的区（FREE）
+    +   有剩余空间的碎片区（FREE_FRAG）
+    +   无剩余空间的碎片区（FULL_FRAG）
+    +   附属于某个段的区（FSEG）
+
+7.  `XDES Entry`结构（Extent Descriptor Entry），记录了区的一些信息和属性。。`XDES Entry`存放在表空间的每一个组的第一个页面中（第一组是`FSP_HDR`类型页，其余的是`XDES`类型页），存放256个`XDES Entry`结构，分别对应该组的256个区。
+
+8.  `XDES Entry`之间通过`List Node`连接成一个`XDES Entry`链表
+
+9.  直属于表空间的`XDES Entry`链表：
+
+    +   `FREE`链表：把状态为`FREE`的区对应的`XDES Entry`结构通过`List Node`来连接成一个链表
+    +   `FREE_FRAG`链表：把状态为`FREE_FRAG`的区对应的`XDES Entry`结构通过`List Node`来连接成一个链表。
+    +   `FULL_FRAG`链表：把状态为`FULL_FRAG`的区对应的`XDES Entry`结构通过`List Node`来连接成一个链表。
+
+10.  每个段有自己的三个`XDES Entry`链表：
+
+     +   `FREE`链表：所有页面都是空闲的区对应的`XDES Entry`结构会被加入到这个链表。
+     +   `NOT_FULL`链表：仍有空闲空间的区对应的`XDES Entry`结构会被加入到这个链表。
+     +   `FULL`链表：无空闲空间的区对应的`XDES Entry`结构会被加入到这个链表。
+
+11.  每个链表都对应一个一个链表基节点（`List Base Node`），`List Base Node`结构中包含有链表长度、头结点和尾节点的位置，便于迅速定位某个链表。
+
+12.  `INODE Entry`结构，用于记录段的属性。包含段的`FREE`链表、`NOT_FULL`链表、`FULL`链表的三个基节点
+
+13.  直属于表空间的三个`FREE`链表、`FREE_FRAG`链表、`FULL_FRAG`链表的基节点，存储在表空间的第一个页面（`FSP_HDR`）的`file space header`中
+
+14.  每个段对应的`INODE Entry`结构会集中存放到一个类型为`INODE`的页中，如果表空间中的段特别多，则会有多个`INODE Entry`结构，可能一个页放不下，这些`INODE`类型的页会组成两种列表：
+
+     +   `SEG_INODES_FULL`链表，该链表中的`INODE`类型的页面都已经被`INODE Entry`结构填充满了，没空闲空间存放额外的`INODE Entry`了。
+
+     +   `SEG_INODES_FREE`链表，该链表中的`INODE`类型的页面仍有空闲空间来存放
+
+         `INODE Entry`结构。
+
+15.  `SEG_INODES_FULL`链表和`SEG_INODES_FREE`链表的基节点，也存放在表空间的第一个页面（`FSP_HDR`）的`file space header`中。
+
+16.  每当我们新创建一个段（创建索引时就会创建段）时，都会创建一个`INODE Entry`结构与之对应，存储`INODE Entry`的大致过程就是这样的：
+
+     +   先看看`SEG_INODES_FREE`链表是否为空，如果不为空，直接从该链表中获取一个节点，也就相当于获取到一个仍有空闲空间的`INODE`类型的页面，然后把该`INODE Entry`结构放到该页面中。当该页面中无剩余空间时，就把该页放到`SEG_INODES_FULL`链表中。
+     +   如果`SEG_INODES_FREE`链表为空，则需要从表空间的`FREE_FRAG`链表中申请一个页面，修改该页面的类型为`INODE`，把该页面放到`SEG_INODES_FREE`链表中，与此同时把该`INODE Entry`结构放入该页面。
+
+17.  B+数索引的根索引页中的`PAGE_BTR_SEG_LEAF`和`PAGE_BTR_SEG_TOP`两个字段，分别对应一个`Segment Header`的结构（10个字节），用于记录对应的`INODE Entry`结构的地址，用于连接索引和段。
+
+## 系统表空间
+
+1.  关于数据的数据、为了保存数据而额外记录的信息，称为元数据。（如该表有多少索引，每个索引对应哪几个字段，该索引对应的根页面在哪个表空间的哪个页面）
+2.  InnoDB中，记录元数据的表称为内部系统表，也称为数据字段，都是以`B+`树的形式保存在系统表空间的某些页面中。其中`SYS_TABLES`、`SYS_COLUMNS`、`SYS_INDEXES`、`SYS_FIELDS`四张表被称为基本系统表（basic system tables）
+3.  基本系统表的元数据（聚簇索引和二级索引对应的B+树位置等）存储在系统表空间页号为7的`Data Dictionary Header`页面，类型为`SYS`，记录了数据字典的头部信息和整个InnoDB存储引擎一些全局属性。
+
 # 问题
 
 1.  为什么规定一页是16kb？
