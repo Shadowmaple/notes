@@ -837,7 +837,7 @@ order by cust_name;
 
 标量子查询就是返回单一值的子查询，即只返回 1 行 1列的结果。
 
-它可以用在能够使用常数或者列名的地 方，无论是 SELECT 子句、 GROUP BY 子句、 HAVING 子句，还是ORDER BY 子句，几乎所有的地方都可以使用。包括 WHERE 子句，可以规避 WHREE 子句不能使用聚合函数的情况。
+它可以用在能够使用常数或者列名的地 方，无论是 SELECT 子句、 GROUP BY 子句、 HAVING 子句，还是ORDER BY 子句，几乎所有的地方都可以使用。包括 WHERE 子句，可以规避 WHETRE 子句不能使用聚合函数的情况。
 
 如：
 
@@ -898,7 +898,7 @@ select prod_id from products;
 
 +   对于**内连接**的两个表，驱动表中的记录在被驱动表中找不到匹配的记录，该记录不会加入到最后的结果集，我们上边提到的连接都是所谓的`内连接`。
 
-+   对于**外连接**的两个表，驱动表中的记录即使在被驱动表中没有匹配的记录，也仍然需要加入到结果集。
++   对于**外连接**的两个表，**驱动表**中的记录即使在**被驱动表**中没有匹配的记录，也仍然需要加入到结果集。
 
     根据选取驱动表的不同，外连接仍然可以细分为：
 
@@ -936,7 +936,7 @@ and orderitems.prod_id = products.prod_id and order_num = 20005;
 该方式必须使用 ON 子句，并且要书写在 FROM 和 WHERE 之间。
 
 ```mysql
-# 明确内部联结
+-- 明确内部联结
 select v.vend_name, p.prod_name, p.prod_price
 from vendors as v inner join products as p
 on v.vend_id = p.vend_id;
