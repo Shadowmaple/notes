@@ -222,8 +222,8 @@
 ## 系统表空间
 
 1.  关于数据的数据、为了保存数据而额外记录的信息，称为元数据。（如该表有多少索引，每个索引对应哪几个字段，该索引对应的根页面在哪个表空间的哪个页面）
-2.  InnoDB中，记录元数据的表称为内部系统表，也称为数据字段，都是以`B+`树的形式保存在系统表空间的某些页面中。其中`SYS_TABLES`、`SYS_COLUMNS`、`SYS_INDEXES`、`SYS_FIELDS`四张表被称为基本系统表（basic system tables）
-3.  基本系统表的元数据（聚簇索引和二级索引对应的B+树位置等）存储在系统表空间页号为7的`Data Dictionary Header`页面，类型为`SYS`，记录了数据字典的头部信息和整个InnoDB存储引擎一些全局属性。
+2.  InnoDB中，记录元数据的表称为内部系统表，也称为**数据字典**，都是以`B+`树的形式保存在系统表空间的某些页面中。其中`SYS_TABLES`、`SYS_COLUMNS`、`SYS_INDEXES`、`SYS_FIELDS`四张表被称为基本系统表（basic system tables）
+3.  基本系统表的元数据（聚簇索引和二级索引对应的B+树位置等）存储在系统表空间页号为7的`Data Dictionary Header`页面，类型为`SYS`，记录了**数据字典**的头部信息和整个InnoDB存储引擎一些全局属性。
 
 # 单表访问原理
 
@@ -367,7 +367,44 @@
      select * from engine_cost;
      ```
 
-     
+# InnoDB的统计数据
+
+1.  查看统计数据：
+
+    ```sql
+    show table status;
+    show index status;
+    ```
+    
+2.  两种存储统计数据的方式：**基于磁盘的永久性统计数据**、**基于内存的非永久性统计数据**。系统变量`innodb_stats_persistent`来控制使用何种方式存储，默认为`ON`，即永久性的。
+
+3.  `InnoDB`默认是**以表为单位来收集和存储统计数据的**。
+
+4.  可以单独通过`STATS_PERSISTENT`属性指定某张表的存储方式。当`STATS_PERSISTENT=1`时，表明把该表的统计数据永久地存储到磁盘上，当`STATS_PERSISTENT=0`时，表明临时地存储到内存中
+
+5.  永久性的统计数据实际存储在`innodb_table_stats`和`innodb_index_stats`两张表里（位于mysql数据库中）。`innodb_table_stats`表中每条记录都代表一个表的统计信息（一个表一条记录），`innodb_index_stats`表中每条记录都代表一个索引的统计项（一个索引多条记录）。
+
+6.  `innodb_table_stats`以`(database_name, table_name)`为主键，`Innodb_index_stats`以`(database_name, table_name, index_name, stat_name)`为主键。
+
+7.  `innodb_table_stats`表中的`n_rows`统计项，即表的记录数的收集过程：按照一定算法选取几个叶子节点页面，计算每个页面中主键值记录数量，然后计算平均一个页面中主键值的记录数量乘以全部叶子节点的数量就算是该表的`n_rows`值。
+
+8.  `n_rows`值精确与否取决于统计时采样的页面数量，名为`innodb_stats_persistent_sample_pages`的系统变量用来控制使用永久性的统计数据时，计算统计数据时采样的页面数，默认为20。也可以单独设置某个表的采样页面的数量，通过指定`STATS_SAMPLE_PAGES`属性设置。
+
+9.  `innodb_index_stats`表中，`stat_name`表示针对该索引的统计项名称，有三种：
+
+    +   `n_leaf_pages`：表示该索引的叶子节点占用多少页面
+    +   `size`：表示该索引共占用多少页面
+    +   `n_diff_pfx**NN**`：表示对应的索引列不重复的值有多少
+
+10.  更新统计数据的方式：
+
+     +   **自动更新**。设置`innodb_stats_auto_recalc`变量为`ON`，开启服务器自动重新计算统计数据，过程异步；每个表都维护了一个变量，记录着对该表进行增删改的记录条数，只有当发生变动的记录数量超过了表大小的**10%**，才会自动更新。
+     +   **手动执行`analyze table`语句更新**。`analyze table`语句执行后会立即重新计算统计数据，过程是同步的
+     +   **手动修改表的数据**。修改表中数据后，需要执行`flush table 表名;`来让查询优化器重新加载数据
+
+11.  非永久性的统计数据采样的页面数量是由`innodb_stats_transient_sample_pages`控制的，默认值是8
+
+12.  `innodb_stats_method`变量决定着在统计某个索引列不重复值的数量时如何对待`NULL`值。有`nulls_equal`、`nulls_unequal`和`nulls_ignored`三个候选值。
 
 # 问题
 
