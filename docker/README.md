@@ -1,9 +1,10 @@
 # Docker
 
-https://docs.docker.com/install/linux/docker-ce/ubuntu/
-[官方教程](https://docs.docker.com/install/linux/linux-postinstall/)
-
-https://yeasy.gitbooks.io/docker_practice/introduction/what.html
+>   https://vuepress.mirror.docker-practice.com/
+>
+>    https://docs.docker.com/install/linux/docker-ce/ubuntu/
+>
+>   [官方教程](https://docs.docker.com/install/linux/linux-postinstall/)
 
 列出镜像
 ```shell
@@ -13,7 +14,8 @@ docker images
 
 删除镜像
 ```shell
-docker image rm 501
+docker image rm <image id>
+docker rmi <image id>
 ```
 
 制作镜像
@@ -47,10 +49,14 @@ RUN pip3 install -r requirements.txt
 CMD flask run -h 0.0.0.0 -p 5000
 ```
 
-查看正在运行的容器
+查看容器
 
 ```shell
+# 正在运行的容器
 docker ps
+
+# 全部容器
+docker ps -a
 ```
 
 停止运行
@@ -58,4 +64,15 @@ docker ps
 ```shell
 docker stop [CONTAINER ID]
 ```
+
+删除容器
+
+```shell
+docker rm [CONTAINER ID]
+
+# 删除全部
+docker rm $(docker ps -a -q)
+```
+
+ps：容器停止后还存在，想删除镜像时要先删除容器。
 
