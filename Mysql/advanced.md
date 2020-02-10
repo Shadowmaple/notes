@@ -225,6 +225,8 @@
 2.  InnoDB中，记录元数据的表称为内部系统表，也称为**数据字典**，都是以`B+`树的形式保存在系统表空间的某些页面中。其中`SYS_TABLES`、`SYS_COLUMNS`、`SYS_INDEXES`、`SYS_FIELDS`四张表被称为基本系统表（basic system tables）
 3.  基本系统表的元数据（聚簇索引和二级索引对应的B+树位置等）存储在系统表空间页号为7的`Data Dictionary Header`页面，类型为`SYS`，记录了**数据字典**的头部信息和整个InnoDB存储引擎一些全局属性。
 
+![](./InnoDB_file_space.png)
+
 # 单表访问原理
 
 
