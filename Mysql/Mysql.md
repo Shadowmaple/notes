@@ -740,9 +740,9 @@ mysql> select vend_id, count(*) from products group by vend_id;
 |    1005 |        2 |
 +---------+----------+
 4 rows in set (0.04 sec)
-# 实际上就是分类汇总
+-- 实际上就是分类汇总
 
-# 加上 WITH ROLLUP 关键字
+-- 加上 WITH ROLLUP 关键字
 mysql> select vend_id, count(*) from products group by vend_id with rollup;
 +---------+----------+
 | vend_id | count(*) |
@@ -762,6 +762,7 @@ mysql> select vend_id, count(*) from products group by vend_id with rollup;
 4. 除聚集计算语句外，不能把聚合键之外的列名书写在 SELECT 子句之中，否则会报错。
 5. 若分组列中具有 NULL 值，则NULL将作为一个分组返回；若有多行NULL值，则将它们分为一组。
 6. 使用 WHERE 子句进行汇总处理时，会先根据 WHERE 子句指定的条件进行过滤,然后再进行汇总处理。
+7. 使用`GROUP BY`默认会按`ORDER BY`进行升序排序
 
 ## 过滤分组
 使用`HAVING` 关键字进行过滤分组。
@@ -775,9 +776,9 @@ mysql> select vend_id, count(*) from products group by vend_id with rollup;
 `WHERE`在数据分组前进行过滤，而`HAVING`在数据分组后进行过滤。`WHERE`排除的行不包括在分组中，这可能会改变计算值，从而影响 `HAVING` 子句中基于这些值过滤掉的分组。
 
 ```mysql
-mysql> select cust_id, count(*) as orders from orders 
-    -> group by cust_id
-    -> having count(*) >= 2;
+select cust_id, count(*) as orders from orders 
+	group by cust_id
+	having count(*) >= 2;
 ```
 
 注：
@@ -786,7 +787,7 @@ mysql> select cust_id, count(*) as orders from orders
 
 ## 分组和排序
 
-GROUP BY 输出的可能不是分组的顺序，所以不一定是有序的，因此要想保证有序，就要使用 ORDER BY 子句。
+MySQL的`GROUP BY`语句默认会进行`ORDER BY`排序，如不想进行排序，则要显示地加上`ORDER BY NULL`。
 
 注意子句的顺序：
 ```mysql

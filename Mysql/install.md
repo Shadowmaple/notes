@@ -33,8 +33,6 @@ $ sudo apt-get update
 
 再重新安装
 
-
-
 ## 配置
 
 ```shell
