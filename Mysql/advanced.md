@@ -475,6 +475,7 @@
     10.  range
     11.  index：索引覆盖时，对二级索引进行全部扫描
     12.  ALL
+5.  使用`optimizer trace`，可以方便地展示出优化器生成执行计划的整个过程。过程分为三个阶段：prepare、optimize、execute。需要将系统变量`optimizer_trace`的`enabled`值设为`on`，才能开启此功能。
 
 # 问题
 
