@@ -477,6 +477,55 @@
     12.  ALL
 5.  使用`optimizer trace`，可以方便地展示出优化器生成执行计划的整个过程。过程分为三个阶段：prepare、optimize、execute。需要将系统变量`optimizer_trace`的`enabled`值设为`on`，才能开启此功能。
 
+# InnoDB的Buffer Pool
+
+1.  InnoDB会对加载到内存中的页进行缓存
+
+2.  InnoDB在MySQL服务器启动的时候会向操作系统申请一片连续的内存，称为`Buffer Pool`（缓冲池）
+
+3.  可以在启动服务器的时候通过配置`innodb_buffer_pool_size`参数的值来改变`Buffer Pool`的大小，默认为128M，最小值为5M。
+
+4.  `Buffer Pool`中默认的缓存页大小和在磁盘上默认的页大小是一样的，都是16KB。每个缓存页都有一个相对应的控制块，记录了缓存页的表空间编号、页号、缓存页在`Buffer Pool`中的地址、链表节点信息、一些锁信息、`LSN`信息等等这些控制信息。
+
+5.  控制块和缓存页都被存放到 `Buffer Pool` 中，其中控制块被存放到 `Buffer Pool` 的前边，缓存页被存放到 Buffer Pool 后边，中间未使用完、不足以创建更多的一对控制块和缓存页的空间被称为**碎片**
+
+6.  每个控制块大约占用缓存页大小的5%，该大小不包含在`innodb_buffer_pool_size`值中，即实际申请的内存大小会比设置的参数值大5%左右。
+
+7.  InnoDB使用了许多双向链表来管理`Buffer Pool`
+
+8.  链表的基节点占用的内存空间并不包含在为`Buffer Pool`申请的一大片连续内存空间之内，而是单独申请的一块内存空间。包含有表头、表尾和节点数信息。
+
+9.  **free链表**中每一个节点都代表一个空闲的缓存页，在将磁盘中的页加载到`Buffer Pool`时，会从free链表中寻找空闲的缓存页。
+
+10.  为了快速定位某个页是否被加载到`Buffer Pool`，使用**表空间号 + 页号**作为key，缓存页作为value，建立**哈希表**。
+
+11.  在`Buffer Pool`中某个缓存页的数据被修改，但还未更新到磁盘中，即混内存中的页和磁盘中的不一致了，该缓存页被称为**脏页**。
+
+12.  **flush链表**用来记录各个脏页，每个节点都代表一个脏页。
+
+13.  InnoDB有**预读**功能，就是InnoDB认为执行当前的请求可能之后会读取某些页面，就预先把它们加载到`Buffer Pool`中。有线性预读和随机预读两种方式：
+
+     +   线性预读：如果顺序访问了某个区（`extent`）的页面超过`innodb_read_ahead_threshold`这个系统变量的值，就会触发一次异步读取下一个区中全部的页面到`Buffer Pool`的请求
+
+     +   随机预读：如果`Buffer Pool`中已经缓存了某个区的13个连续的页面，不论这些页面是不是顺序读取的，都会触发一次`异步`读取本区中所有其的页面到`Buffer Pool`的请求。通过设置`innodb_random_read_ahead`系统变量为`ON`开启，默认不开启。
+
+14.  为了提高**缓存命中率**，建立**LRU链表**（Least Recently Used），记录最频繁加载的页。当free链表中没有多余链表时，会将最不频繁的缓存页（位于表尾）移除，然后放入新的页到首部。每次使用到某个缓存页，就把该缓存页调整到**LRU链表**的头部。
+
+15.  为了避免预读和全表扫描对`Buffer Pool`缓存命中率的影响，**LRU链表**分为young和old两个区域，young区域存储使用频率非常高的缓存页（热数据），old区域存储使用频率不是很高的缓存页（冷数据）。可以通过`innodb_old_blocks_pct`来调节old区域所占的比例。
+
+16.  首次从磁盘上加载到`Buffer Pool`的页会被放到old区域的头部，在`innodb_old_blocks_time`间隔时间内访问该页不会把它移动到young区域头部。在`Buffer Pool`没有可用的空闲缓存页时，会首先淘汰掉old区域的一些页。
+
+17.  在`Buffer Pool`特别大的时候，可以把它们拆分成若干个小的`Buffer Pool`，每个`Buffer Pool`都称为一个实例，它们都是独立的，独立的去申请内存空间，独立的管理各种链表。但总共的大小还是`innodb_buffer_pool_size`的大小。
+
+18.  可以通过指定`innodb_buffer_pool_instances`来控制`Buffer Pool`实例的个数，每个`Buffer Pool`实例中都有各自独立的链表，互不干扰。当`innodb_buffer_pool_size`的值小于1G的时候设置多个实例是无效的，`innodb_buffer_pool_instances`会被默认修改为1
+
+19.  MySQL 5.7.5版本之后，可以在服务器运行过程中调整`Buffer Pool`大小。每个`Buffer Pool`实例由若干个**chunk**（块）组成，每个`chunk`的大小可以在服务器启动时通过启动参数设置，在运行时不可更改，默认为128M。而在运行过程中调整`Buffer Pool`大小时，会以`chunk`为单位向操作系统申请空间。
+
+20.  查看`Buffer Pool`的状态信息：`show engine innodb status;`
+
 # 问题
 
 1.  为什么默认一页是16kb？
+2.  全文索引是怎样的
+3.  InnoDB的压缩页
+4.  Buffer Pool中各链表的链表基节点在哪？
