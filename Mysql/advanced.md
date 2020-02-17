@@ -523,9 +523,64 @@
 
 20.  查看`Buffer Pool`的状态信息：`show engine innodb status;`
 
+# Redo日志
+
+1.  执行事务时会产生`redo log`
+2.  redo日志会把事务在执行过程中对数据库所做的所有修改都记录下来，在之后系统崩溃重启后可以把事务所做的任何修改都恢复出来。
+3.  使用redo日志的好处：占用的空间非常小，顺序写入磁盘（顺序I/O）
+4.  redo日志有53种不同的类型，通用的结构为：`type`、`space ID`、`page number`、`data`
+5.  一些类型的`redo`日志既包含`物理`层面的意思，也包含`逻辑`层面的意思：
+    +   物理层面：这些日志都指明了对哪个表空间的哪个页进行了修改。
+    +   逻辑层面：在系统崩溃重启时，并不能直接根据这些日志里的记载，将页面内的某个偏移量处恢复成某个数据，而是需要调用一些事先准备好的函数，执行完这些函数后才可以将页面恢复成系统崩溃前的样子
+6.  在执行这些保证原子性的操作时（插入记录、页分裂等）必须以**组**的形式来记录的`redo`日志，在进行系统崩溃重启恢复时，是针对整个组中的`redo`日志进行恢复操作
+7.  在每一组redo日志的最后一条后面会有一个名为`MLOG_MULTI_REC_END`的特殊redo日志，其结构只要一个`type`字段，值为31
+8.  只有一条日志时，用`type`字段的最左边一个位表示是否是一条单一的日志（1为是），而不是使用类型为`MLOG_MULTI_REC_END`的`redo`日志表示，节省空间。`type`字段占一个字节，右边7个比特位表示redo日志的类型。
+9.  对底层页面中的一次原子访问的过程被称为一个`Mini-Transaction`，简称`mtr`。一个事务可以包含若干条语句，每一条语句其实是由若干个`mtr`组成，每一个`mtr`又可以包含若干条`redo`日志。
+10.  redo日志使用单位大小为512B的页存放，存储redo日志的页可以称为block，即`redo log block`。结构分为`log block header`、`log block trailer`和`log block body`
+11.  redo 日志在服务器启动时就向操作系统申请了一片连续的称为`redo log buffer`的连续内存空间，这片内存空间被划分成若干个连续的`redo log block`。其大小可以通过参数`innodb_log_buffer_size`来指定，默认为16MB。
+12.  全局变量`buf_free`，指明后续写入的`redo`日志应该写入到`log buffer`中的哪个位置
+13.  redo日志从内存`log buffer`刷到磁盘（日志文件）的情况：
+     +   `log buffer`空间到达约1/2时
+     +   事务提交时
+     +   后台有一个线程，大约每秒都会刷新一次
+     +   正常关闭服务器时
+     +   做`checkpoint`时
+14.  在MySQL的数据目录下面有一组名为`ib_logfile[n]（n=0,1,2,3...）`的redo日志文件组。写入日志文件是按照文件顺序写入的，最后的写满了就返回到第一个。
+15.  将`log buffer`中的redo日志刷新到磁盘的本质就是把block的镜像写入日志文件中，所以`redo`日志文件其实也是由若干个`512`字节大小的block组成。
+16.  每个redo日志文件都由两部分组成：
+     +   前2048个字节，即前4个block是用来存储管理信息，包含`log file header`、`checkpoint1`、`checkpoint2`三个部分，第三个block未用。
+     +   从第2048字节往后用来存储`log buffer`中的block镜像。
+17.  全局变量`Log Sequeue Number`，**日志序列号**，简称`LSN`，用于记录已经写入的`redo`日志量，初始值为8704
+18.  统计`lsn`的增长量时，是按照实际写入的日志量加上占用的`log block header`和`log block trailer`来计算的
+19.  每一组由mtr生成的redo日志都有一个唯一的LSN值与其对应，LSN值越小，说明redo日志产生的越早。
+20.  全局变量`buf_next_to_write`，标记当前`log buffer`中已经有哪些日志被刷新到磁盘中了，和`buf_free`对应。
+21.  全局变量`flushed_to_disk_lsn`，表示刷新到**磁盘**中的`redo`日志量。
+22.  全局变量`write_lsn`，表示刷新到**操作系统的缓冲区**中的redo日志量``。
+23.  当`LSN`和`flushed_to_disk_lsn`的值相同时，说明`log buffer`中的所有redo日志都已经刷新到磁盘中了。
+24.  `Buffer Pool`中的flush链表，在每个控制块中都有记录两个关于页面何时修改的属性：
+     +   `oldest_modification`：如果某个页面被加载到`Buffer Pool`后进行第一次修改，那么就将修改该页面的`mtr`开始时对应的`lsn`值写入这个属性。
+     +   `newest_modification`：每修改一次页面，都会将修改该页面的`mtr`结束时对应的`lsn`值写入这个属性。也就是说该属性表示页面最近一次修改后对应的系统`lsn`值。
+25.  `checkpoint`，覆盖原先的已刷新到磁盘中的redo日志，并将属性`checkpoint_lsn`加一的操作。两个步骤：
+     1.  通过flush链表尾节点对应控制块中的`oldest_modification`属性，获取当前系统中可以被覆盖的`redo`日志对应的最大`lsn`值，小于该值的便都可以被覆盖。
+     2.  将`checkpoint_lsn`和对应的`redo`日志文件组偏移量以及此次`checkpint`的编号写到日志文件的管理信息（`checkpoint1`或`checkpoint2`）中。
+26.  查看当前`InnoDB`存储引擎中的各种`LSN`值的情况：`show engine innodb status`
+27.  可以通过修改系统变量`innodb_flush_log_at_trx_commit`的值，来改变执行事务时刷新磁盘记录的模式：
+     +   0：在事务提交时不立即向磁盘中同步`redo`日志
+     +   1：事务提交时需要将`redo`日志同步到磁盘，可以保证事务的持久性，默认值
+     +   2：事务提交时需要将`redo`日志写到操作系统的缓冲区中，但并不需要保证将日志真正的刷新到磁盘
+28.  使用rede日志进行恢复：
+     1.  确定恢复的起始点：通过`checkpoint_no`（`checkpoint1`和`checkpoint2`），获取到最近发生的`checkpoint`对应的`checkpoint_lsn`值以及它在`redo`日志文件组中的偏移量`checkpoint_offset`
+     2.  确定恢复的终点：通过block的`log block header`的`LOG_BLOCK_HDR_DATA_LEN`属性是否为512（已满），未满则为终点。
+     3.  使用哈希表，拉链法，通过`space ID`和`page number`计算出散列值，遍历哈希表恢复，如此相比直接遍历redo日志，避免很多读取页面的随机I/O
+     4.  跳过已经刷新到磁盘的页面……
+29.  `LOG_BLOCK_HDR_NO`的计算：`((lsn / 512) & 0x3FFFFFFFUL) + 1`。保证数量为1GB个，即redo日志文件组中包含的block块最多为1GB个。
+
+
 # 问题
 
 1.  为什么默认一页是16kb？
 2.  全文索引是怎样的
 3.  InnoDB的压缩页
 4.  Buffer Pool中各链表的链表基节点在哪？
+5.  `row_id`和`Max Row ID`，每个表的`row_id`是怎样维护的
+
