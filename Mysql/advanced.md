@@ -529,12 +529,12 @@
 2.  redo日志会把事务在执行过程中对数据库所做的所有修改都记录下来，在之后系统崩溃重启后可以把事务所做的任何修改都恢复出来。
 3.  使用redo日志的好处：占用的空间非常小，顺序写入磁盘（顺序I/O）
 4.  redo日志有53种不同的类型，通用的结构为：`type`、`space ID`、`page number`、`data`
-5.  一些类型的`redo`日志既包含`物理`层面的意思，也包含`逻辑`层面的意思：
+5.  一些类型的`redo`日志既包含`物理`层面的意思，也包含逻辑层面的意思：
     +   物理层面：这些日志都指明了对哪个表空间的哪个页进行了修改。
-    +   逻辑层面：在系统崩溃重启时，并不能直接根据这些日志里的记载，将页面内的某个偏移量处恢复成某个数据，而是需要调用一些事先准备好的函数，执行完这些函数后才可以将页面恢复成系统崩溃前的样子
+    +   逻辑层面：在系统崩溃重启时，并不能直接根据这些日志里的记载、将页面内的某个偏移量处恢复成某个数据，而是需要调用一些事先准备好的函数，执行完这些函数后才可以将页面恢复成系统崩溃前的样子
 6.  在执行这些保证原子性的操作时（插入记录、页分裂等）必须以**组**的形式来记录的`redo`日志，在进行系统崩溃重启恢复时，是针对整个组中的`redo`日志进行恢复操作
-7.  在每一组redo日志的最后一条后面会有一个名为`MLOG_MULTI_REC_END`的特殊redo日志，其结构只要一个`type`字段，值为31
-8.  只有一条日志时，用`type`字段的最左边一个位表示是否是一条单一的日志（1为是），而不是使用类型为`MLOG_MULTI_REC_END`的`redo`日志表示，节省空间。`type`字段占一个字节，右边7个比特位表示redo日志的类型。
+7.  在每一组redo日志的最后一条后面会有一个名为`MLOG_MULTI_REC_END`的特殊redo日志，用于标识一组日志的结束。其结构只要一个`type`字段，值为31。
+8.  只有一条日志时，用`type`字段的最左边一个位表示是否是一条单一的日志（1为是），而不是使用类型为`MLOG_MULTI_REC_END`的`redo`日志表示，为了节省空间。`type`字段占一个字节，右边7个比特位表示redo日志的类型。
 9.  对底层页面中的一次原子访问的过程被称为一个`Mini-Transaction`，简称`mtr`。一个事务可以包含若干条语句，每一条语句其实是由若干个`mtr`组成，每一个`mtr`又可以包含若干条`redo`日志。
 10.  redo日志使用单位大小为512B的页存放，存储redo日志的页可以称为block，即`redo log block`。结构分为`log block header`、`log block trailer`和`log block body`
 11.  redo 日志在服务器启动时就向操作系统申请了一片连续的称为`redo log buffer`的连续内存空间，这片内存空间被划分成若干个连续的`redo log block`。其大小可以通过参数`innodb_log_buffer_size`来指定，默认为16MB。
@@ -545,36 +545,92 @@
      +   后台有一个线程，大约每秒都会刷新一次
      +   正常关闭服务器时
      +   做`checkpoint`时
-14.  在MySQL的数据目录下面有一组名为`ib_logfile[n]（n=0,1,2,3...）`的redo日志文件组。写入日志文件是按照文件顺序写入的，最后的写满了就返回到第一个。
-15.  将`log buffer`中的redo日志刷新到磁盘的本质就是把block的镜像写入日志文件中，所以`redo`日志文件其实也是由若干个`512`字节大小的block组成。
+14.  在MySQL的数据目录下面有一组名为`ib_logfile[n]（n=0,1,2,3...）`的redo日志文件组。写入日志文件是按照文件顺序写入的，最后的写满了就返回到第一个，就像一个循环链表。
+15.  将`log buffer`中的redo日志刷新到磁盘的本质就是把block的镜像写入日志文件中，所以`redo`日志文件其实也是由若干个512字节大小的block组成。
 16.  每个redo日志文件都由两部分组成：
      +   前2048个字节，即前4个block是用来存储管理信息，包含`log file header`、`checkpoint1`、`checkpoint2`三个部分，第三个block未用。
      +   从第2048字节往后用来存储`log buffer`中的block镜像。
 17.  全局变量`Log Sequeue Number`，**日志序列号**，简称`LSN`，用于记录已经写入的`redo`日志量，初始值为8704
-18.  统计`lsn`的增长量时，是按照实际写入的日志量加上占用的`log block header`和`log block trailer`来计算的
+18.  统计`lsn`的增长量时，是按照实际写入的日志量加上占用的`log block header`和`log block trailer`大小来计算的。当然，若未跨多个block时，就只需计算写入的日志量。
 19.  每一组由mtr生成的redo日志都有一个唯一的LSN值与其对应，LSN值越小，说明redo日志产生的越早。
-20.  全局变量`buf_next_to_write`，标记当前`log buffer`中已经有哪些日志被刷新到磁盘中了，和`buf_free`对应。
+20.  全局变量`buf_next_to_write`，标记当前内存`log buffer`中已经有哪些日志被刷新到磁盘中了，指向上次被刷入磁盘的日志，和`buf_free`对应。
 21.  全局变量`flushed_to_disk_lsn`，表示刷新到**磁盘**中的`redo`日志量。
-22.  全局变量`write_lsn`，表示刷新到**操作系统的缓冲区**中的redo日志量``。
+22.  全局变量`write_lsn`，表示刷新到**操作系统的缓冲区**中的redo日志量。
 23.  当`LSN`和`flushed_to_disk_lsn`的值相同时，说明`log buffer`中的所有redo日志都已经刷新到磁盘中了。
-24.  `Buffer Pool`中的flush链表，在每个控制块中都有记录两个关于页面何时修改的属性：
-     +   `oldest_modification`：如果某个页面被加载到`Buffer Pool`后进行第一次修改，那么就将修改该页面的`mtr`开始时对应的`lsn`值写入这个属性。
-     +   `newest_modification`：每修改一次页面，都会将修改该页面的`mtr`结束时对应的`lsn`值写入这个属性。也就是说该属性表示页面最近一次修改后对应的系统`lsn`值。
+24.  `Buffer Pool`中的flush链表（记录脏页，即被修改过的数据页），在每个控制块中都有记录两个关于页面何时修改的属性：
+     +   `oldest_modification`：如果某个页面被加载到`Buffer Pool`后进行**第一次修改**，那么就将修改该页面的`mtr`**开始时**对应的`lsn`值写入这个属性。
+     +   `newest_modification`：每修改一次页面，都会将修改该页面的`mtr`**结束时**对应的`lsn`值写入这个属性，也就是说该属性表示页面**最近一次修改**后对应的系统`lsn`值。
 25.  `checkpoint`，覆盖原先的已刷新到磁盘中的redo日志，并将属性`checkpoint_lsn`加一的操作。两个步骤：
      1.  通过flush链表尾节点对应控制块中的`oldest_modification`属性，获取当前系统中可以被覆盖的`redo`日志对应的最大`lsn`值，小于该值的便都可以被覆盖。
-     2.  将`checkpoint_lsn`和对应的`redo`日志文件组偏移量以及此次`checkpint`的编号写到日志文件的管理信息（`checkpoint1`或`checkpoint2`）中。
-26.  查看当前`InnoDB`存储引擎中的各种`LSN`值的情况：`show engine innodb status`
+     2.  将`checkpoint_lsn`和对应的`redo`日志文件组偏移量以及此次`checkpoint`的编号写到日志文件的管理信息（`checkpoint1`或`checkpoint2`）中。当`log_checkpoint_no`的值是偶数时，写到`checkpoint1`中；奇数时，写到`checkpoint2`中。
+26.  查看当前`InnoDB`存储引擎中的各种`LSN`值的情况：`show engine innodb status;`
 27.  可以通过修改系统变量`innodb_flush_log_at_trx_commit`的值，来改变执行事务时刷新磁盘记录的模式：
      +   0：在事务提交时不立即向磁盘中同步`redo`日志
-     +   1：事务提交时需要将`redo`日志同步到磁盘，可以保证事务的持久性，默认值
-     +   2：事务提交时需要将`redo`日志写到操作系统的缓冲区中，但并不需要保证将日志真正的刷新到磁盘
+     +   1：事务提交时立即将`redo`日志同步到磁盘，可以保证事务的持久性，默认值
+     +   2：事务提交时将`redo`日志写到操作系统的缓冲区中，但并不需要保证将日志真正的刷新到磁盘
 28.  使用rede日志进行恢复：
-     1.  确定恢复的起始点：通过`checkpoint_no`（`checkpoint1`和`checkpoint2`），获取到最近发生的`checkpoint`对应的`checkpoint_lsn`值以及它在`redo`日志文件组中的偏移量`checkpoint_offset`
-     2.  确定恢复的终点：通过block的`log block header`的`LOG_BLOCK_HDR_DATA_LEN`属性是否为512（已满），未满则为终点。
-     3.  使用哈希表，拉链法，通过`space ID`和`page number`计算出散列值，遍历哈希表恢复，如此相比直接遍历redo日志，避免很多读取页面的随机I/O
+     1.  确定恢复的起始点：通过redo日志文件的`log_checkpoint_no`（做`checkpoint`的编号，在`checkpoint1`和`checkpoint2`中，取大的那一个），获取到最近发生的`checkpoint`对应的`log_checkpoint_lsn`值以及它在`redo`日志文件组中的偏移量`log_checkpoint_offset`
+     2.  确定恢复的终点：通过block的`log block header`的`LOG_BLOCK_HDR_DATA_LEN`属性确定当前block是否为512（已满），未满则为终点。
+     3.  使用哈希表，拉链法，通过`space ID`和`page number`计算出散列值，遍历哈希表恢复。如此相比直接遍历redo日志，避免很多读取页面的随机I/O
      4.  跳过已经刷新到磁盘的页面……
-29.  `LOG_BLOCK_HDR_NO`的计算：`((lsn / 512) & 0x3FFFFFFFUL) + 1`。保证数量为1GB个，即redo日志文件组中包含的block块最多为1GB个。
+29.  `LOG_BLOCK_HDR_NO`（block的编号）的计算：`((lsn / 512) & 0x3FFFFFFFUL) + 1`。保证数量为1GB个，即redo日志文件组中包含的block块最多为1GB个。
 
+# Undo日志
+
+1.  在InnoDB中，记录的`insert`、`update`、`delete`都需要记录`undo log`（撤销日志）
+2.  **只读**事务**第一次**对某个**临时表**进行增、删、改的操作时，或**读写**事务**第一次**对某个表（普通表和临时表）进行增、删、改的操作时，InnoDB会分配一个唯一的**事务id**
+3.  事务id的生成和分配策略：
+    +   服务器会在内存中维护一个全局变量，每当需要为某个事务分配一个事务id时，就会把该变量的值当作事务id分配给该事务，并且把该变量自增1。
+    +   每当这个变量的值为**256的倍数**时，就会将该变量的值刷新到系统表空间的页号为**5**的页面中一个称之为`Max Trx ID`的属性处，该属性占8个字节。
+    +   当系统下一次重新启动时，会将上边提到的`Max Trx ID`属性加载到内存中，将该值加上256之后赋值给我们前边提到的全局变量（因为在上次关机时该全局变量的值可能大于`Max Trx ID`属性值，比如上次的值为257，那么重新启动后加载到内存再加上256的值就是512，虽然258-511的数都没用过，但如此保证了id是唯一的，并且是递增的）
+4.  聚簇索引记录中包含名为`trx_id`（事务id）和`roll_pointer`（指向undo日志的指针）的隐藏列
+5.  undo日志有多种：
+    +   Insert操作：类型为`TRX_UNDO_INSERT_REC`的undo日志
+    +   Delete操作：类型为`TRX_UNDO_DEL_MARK_REC`的undo日志
+    +   不更新主键的Update操作：类型为`TRX_UNDO_UPD_EXIST_REC`的undo日志
+6.  向某个表中插入一条记录时，实际上需要向聚簇索引和所有的二级索引都插入一条记录。不过记录undo日志时，只需要考虑向聚簇索引插入记录时的情况就好了，因为其实聚簇索引记录和二级索引记录是一一对应的，在回滚插入操作时，只需要知道这条记录的主键信息，然后根据主键信息做对应的删除操作
+7.  为了最大限度的节省undo日志占用的存储空间，会给undo日志中的某些属性进行压缩处理
+8.  `delete mark`阶段：仅仅将记录的`delete_mask`标识位设置为1，其他的不做修改（其实会修改记录的`trx_id`、`roll_pointer`这些隐藏列的值），不将其加入到垃圾链表中。此时记录处于一个中间状态。
+9.  `purge`阶段：当该删除语句所在的事务提交之后，把记录从正常链表移到垃圾链表中，由专门的线程完成。
+10.  undo日志会在一条记录插入、修改、删除后，形成一条**版本链**
+11.  在更新操作时，undo日志有不同的方案：
+     +   **不更新主键**：当被更新的列占用的**存储空间不发生变化**时，则**就地更新**；若发生变化，则要**先删除掉旧记录，再插入新记录**，此时的删除是将其加入的垃圾链表的真正删除，而非`delete mark`操作，由用户线程完成。
+     +   **更新主键**：先将旧记录进行`delete mark`操作，再根据更新后各列的值创建一条新记录，并将其插入到聚簇索引中（需重新定位插入的位置）。该情况会记录两条undo日志，一条删除时的`TRX_UNDO_DEL_MARK_REC`的undo日志，一条`TRX_UNDO_INSERT_REC`的undo日志。
+12.  `undo日志`可以被分为两个大类：
+     +   `TRX_UNDO_INSERT`（使用十进制1表示）：类型为`TRX_UNDO_INSERT_REC`的undo日志属于此大类，一般由`INSERT`语句产生，或者在`UPDATE`语句中有更新主键的情况也会产生此类型的undo日志。
+     +   `TRX_UNDO_UPDATE`（使用十进制2表示），除了类型为`TRX_UNDO_INSERT_REC`的undo日志，其他类型的undo日志都属于这个大类，如`TRX_UNDO_DEL_MARK_REC`、`TRX_UNDO_UPD_EXIST_REC`，一般由`DELETE`、`UPDATE`语句产生的undo日志都属于这个大类。
+13.  undo日志存储在类型为`FIL_PAGE_UNDO_LOG`的页面中，默认为16KB。其中包含`Undo Page Header`结构，属性如下：
+     +   `TRX_UNDO_PAGE_TYPE`：存储的undo日志的类型（大类，1或2），不同大类的undo日志不能混着存储
+     +   `TRX_UNDO_PAGE_START`：第一条undo日志在本页面中的起始偏移量
+     +   `TRX_UNDO_PAGE_FREE`：当前最后一条undo日志结束时的偏移量
+     +   `TRX_UNDO_PAGE_NODE`：代表一个`List Node`结构
+
+14.  一个事务中的多个undo页面会连成一条链表，但insert和update类型、普通表和临时表的undo日志都要分开，所以一个事务中最多有**4**个以undo页面为节点组成的链表：普通表和临时表各有`insert undo`链表和`update undo`链表。但四条链表不是一开始都被分配好的，而是在需要的时候才即时创建。
+15.  每一个Undo页面的链表都对应着一个**段**，称为`Undo Log Segment`，链表中的页面都是从这个段里边申请的。
+16.  在每条undo页面链表的第一个页面（`first undo page`）中，都有一个`Undo Log Segment Header`属性，用于记录该链表对应的段的`segment header`信息（包含表空间id、页号和页中偏移量，用于定位一个`INODE Entry`）和其它关于该段的信息。
+17.  一个`Undo Log Segment`可能处在的状态包括：
+     +   `TRX_UNDO_ACTIVE`：活跃状态，也就是一个活跃的事务正在往这个段里边写入undo日志。
+     +   `TRX_UNDO_CACHED`：被缓存的状态。处在该状态的undo页面链表等待着之后被其他事务重用。
+     +   `TRX_UNDO_TO_FREE`：对于`insert undo`链表来说，如果在它对应的事务提交之后，该链表不能被重用，那么就会处于这种状态。
+     +   `TRX_UNDO_TO_PURGE`：对于`update undo`链表来说，如果在它对应的事务提交之后，该链表不能被重用，那么就会处于这种状态。
+     +   `TRX_UNDO_PREPARED`：包含处于`PREPARE`阶段的事务产生的`undo日志`。
+18.  undo页面链表的基节点包含在`first undo page`的`undo log segment header`属性中
+19.  同一个事务向一个Undo页面链表中写入的`undo日志`算是一个组，在每写入一组undo日志时，都会在`first undo page`的**Undo Log Header**属性中先记录一下关于这个组的一些属性
+20.  当一个Undo页面链表**只包含一个页面**，并且该页面**已使用的空间小于整个页面空间的3/4时**，该链表会被**重用**：
+     +   Insert链表重用时，会将原先的undo日志覆盖，从头写入
+     +   Update链表重用时，会保留原先的undo日志，在之后的剩余空间中写入
+21.  `Rollback Segment Header`页面，用于管理undo页面链表，该页面在`TRX_RSEG_UNDO_SLOTS`中存储了各个undo页面链表的`frist undo page`的页号，共1024个页号
+22.  每一个`Rollback Segment Header`页面都对应着一个段，称为`Rollback Segment`（回滚段），该段中其实只有这么一个页面
+23.  当事务提交时，如果该`undo slot`指向的Undo页面链表符合被重用的条件，该`undo slot`就处于被缓存的状态，被缓存的`undo slot`都会被加入到一个链表，`insert undo cached`链表或`update undo cached`链表
+24.  有事务需要分配Undo页面链表时，会先从cashed链表查找是否有可重用的undo页，如无，才从回滚段的第一个`undo slot`开始，看看该`undo slot`的值是不是`FIL_NULL`，若不是，则遍历下一个
+25.  当事务提交时，如果该`undo slot`指向的Undo页面链表不符合被重用的条件：
+     +   对应的`Undo页面`链表是`insert undo`链表时，该`Undo页面`链表的`TRX_UNDO_STATE`属性会被设置为`TRX_UNDO_TO_FREE`，之后该Undo页面链表对应的段会被释放掉（也就意味着段中的页面可以被挪作他用），然后把该`undo slot`的值设置为`FIL_NULL`
+     +   对应的Undo页面链表是`update undo`链表时，该Undo页面链表的`TRX_UNDO_STATE`属性会被设置为`TRX_UNDO_TO_PRUGE`，且会将该`undo slot`的值设置为`FIL_NULL`，然后将本次事务写入的一组undo日志放到一个**History链表**中
+26.  在系统表空间的第`5`号页面中存储了128个`Rollback Segment Header`页面地址（表空间id和页号组成），每个`Rollback Segment Header`就相当于一个回滚段。在`Rollback Segment Header`页面中，包含`1024`个`undo slot`，每个`undo slot`都对应一个`Undo页面`链表。
+27.  回滚段可分为两类：
+     +   为**普通表**分配undo页面的段：第0号、第33-127号回滚段。第0号必须存在系统表空间中，第33-127号回滚段既可以在系统表空间中，也可在个人配置的undo表空间中
+     +   为**临时表**分配undo页面的段：第1-32号回滚段。必须在临时表空间中，对应着数据目录中的`ibtmp1`文件。
+28.  针对普通表和临时表划分不同种类的`回滚段`的原因：在修改针对普通表的回滚段中的Undo页面时，需要记录对应的redo日志，而修改针对临时表的回滚段中的Undo页面时，不需要记录对应的redo日志
 
 # 问题
 
