@@ -1,6 +1,7 @@
 # wine QQ
 在Linux上运行qq
-> [2019年wine QQ最完美解决方案（多Linux发行版通过测试并稳定运行）](https://www.lulinux.com/archives/1319)
+
+> [Linux 上真正完美稳定的 wine QQ 方案](https://linux265.com/news/2674.html)
 
 
 
