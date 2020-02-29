@@ -632,6 +632,58 @@
      +   为**临时表**分配undo页面的段：第1-32号回滚段。必须在临时表空间中，对应着数据目录中的`ibtmp1`文件。
 28.  针对普通表和临时表划分不同种类的`回滚段`的原因：在修改针对普通表的回滚段中的Undo页面时，需要记录对应的redo日志，而修改针对临时表的回滚段中的Undo页面时，不需要记录对应的redo日志
 
+# 事务隔离级别和MVCC
+
+1.  为了保证多个会话（session）、多个事务访问统一数据的性能，需要略微舍弃事务的隔离性
+
+2.  事务并发执行时会遇到的问题：
+
+    +   脏写（Dirty Write）：一个事务**修改**了另一个**未提交**事务修改过的数据
+    +   脏读（Dirty Read）：一个事务**读取**另一个**未提交**事务修改过的数据
+    +   不可重复读（Non-Repeatable Read）：一个事务**只能读取**另一个**已提交**事务修改过的数据，且其他事务每对该数据进行一次修改并提交后，该事务都能查询得到**最新值**。
+    +   幻读（Phantom）：一个事务先根据某些条件查询出一些记录，之后另一个事务又向表中插入了符合这些条件的记录，原先的事务再次按照该条件查询时，**读取到了之前读取时未获取到的记录**。
+
+3.  问题严重性：脏写 > 脏读 > 不可重复读 > 幻读
+
+4.  SQL事务标准中有四个隔离级别：
+
+    +   `READ UNCOMMITTED`：未提交读
+    +   `READ COMMITTED`：已提交读
+    +   `REPEATABLE READ`：可重复读（默认）
+    +   `SERIALIZABLE`：可串行化
+
+5.  SQL标准中不同隔离级别允许发生的问题情况：
+
+    |     隔离级别     |     脏读     |  不可重复读  |     幻读     |
+    | :--------------: | :----------: | :----------: | :----------: |
+    | READ UNCOMMITTED |   Possible   |   Possible   |   Possible   |
+    |  READ COMMITTED  | Not Possible |   Possible   |   Possible   |
+    | REPEATABLE READ  | Not Possible | Not Possible |   Possible   |
+    |   SERIALIZABLE   | Not Possible | Not Possible | Not Possible |
+
+6.  不同的数据库厂商对SQL标准中规定的四种隔离级别支持不一样。MySQL在`REPEATABLE READ`隔离级别下，是可以选择禁止幻读问题的
+
+7.  修改隔离级别：`set [global|session] transaction isolation level [level];`。可设置全局（global）、会话（session）和普通（不加范围关键字，表示只对下一条事务生效）。也可在启动时使用参数修改隔离级别。查看隔离级别：`show variables like 'transaction_isolation';`
+
+8.  MVCC（Multi-Version Concurrency Control ），多版本并发控制，指的就是在使用`READ COMMITTD`、`REPEATABLE READ`这两种隔离级别的事务在执行普通的`select`操作时访问记录的版本链的过程，这样子可以使不同事务的读-写、写-读操作并发执行，从而提升系统性能。
+
+9.  `READ COMMITTD`、`REPEATABLE READ`两个隔离级别的一个很大不同是生成ReadView的时机不同。`READ COMMITTD`在每一次进行普通`select`操作前都会生成一个ReadView，而`REPEATABLE  READ`只在第一次进行普通select操作前生成一个ReadView，之后的查询操作都重复使用这个ReadView。
+
+10.  ReadView只会在select语句才会产生。
+
+11.  ReadView中主要包含4个比较重要的内容：
+
+     +   `m_ids`：表示在生成ReadView时当前系统中**活跃**（未提交）的读写事务的事务id列表。
+     +   `min_trx_id`：表示在生成ReadView时当前系统中活跃的读写事务中最小的事务id，也就是`m_ids`中的最小值。
+     +   `max_trx_id`：表示生成ReadView时系统中应该分配给下一个事务的id值。
+
+12.  使用ReadView时，判断版本是否可见：
+
+     +   如果被访问版本的`trx_id`属性值与`ReadView`中的`creator_trx_id`值相同，意味着当前事务在访问它自己修改过的记录，所以该版本可以被当前事务访问。
+     +   如果被访问版本的`trx_id`属性值小于`ReadView`中的`min_trx_id`值，表明生成该版本的事务在当前事务生成`ReadView`前已经提交，所以该版本可以被当前事务访问。
+     +   如果被访问版本的`trx_id`属性值大于或等于`ReadView`中的`max_trx_id`值，表明生成该版本的事务在当前事务生成`ReadView`后才开启，所以该版本不可以被当前事务访问。
+     +   如果被访问版本的`trx_id`属性值在`ReadView`的`min_trx_id`和`max_trx_id`之间，那就需要判断一下`trx_id`属性值是不是在`m_ids`列表中，如果在，说明创建`ReadView`时生成该版本的事务还是活跃的，该版本不可以被访问；若不在，说明创建ReadView时生成该版本的事务已经被提交，该版本可以被访问。
+
 # 问题
 
 1.  为什么默认一页是16kb？
@@ -640,3 +692,4 @@
 4.  Buffer Pool中各链表的链表基节点在哪？
 5.  `row_id`和`Max Row ID`，每个表的`row_id`是怎样维护的
 
+6.  redo日志和undo日志的作用
