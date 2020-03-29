@@ -40,3 +40,4 @@ DB.Self.Order("time").Find(&subComments, "parent_id = ?", ParentId)
 DB.Self.Where("parent_id = ?",ParentId).Order("time").Find(&subComments)
 ```
 
+同样Limit()也应该在Find()之前，使用Find()最好将其放在最后
