@@ -104,7 +104,7 @@ OAuth 中定义了四类角色：
 +   storeage：负责 token 相关和 client 部分的存储（数据库 or 内存）；
 +   其它：设置，token、client 的管理、重定向……
 
-Golang 中较为成熟的框架：
+>   Golang 中较为成熟的框架：https://gopkg.in/oauth2.v4
 
 ### 需要实现的方法
 
@@ -150,6 +150,7 @@ Golang 中较为成熟的框架：
 +   client_id
 +   client_secret
 +   auth code
++   scope
 
 返回：
 
@@ -169,6 +170,7 @@ Golang 中较为成熟的框架：
 
 +   client_id
 +   client_secret
++   scope
 
 返回参数：
 
