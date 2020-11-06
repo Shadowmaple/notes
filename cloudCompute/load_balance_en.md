@@ -1,22 +1,20 @@
 # Load balancing
 
-Hello, everyone! I'm more than delighted to give a small speech to you about load balancing.
-
-My topic is divided into this three parts: the first is that what is load balancing, the second is application, and the third is the algorithm.
+It is divided into this three parts: the first is that what is load balancing, the second is application, and the third is the algorithm.
 
 ## What is load balancing?
 
 Well, what is load balancing? Let us look at this picture first.
 
-It is well-known that the client/server architecture works like this: client send requests to the server and then the server return response  back. It is the most simple and tradictional architecture int the network.
+It is well-known that the client/server architecture works like this: client send requests to the server and then the server return response  back. It is the most simple and tradictional architecture in the network.
 
 ![](../images/load_balance/client-server.png)
 
-But in general, the server will be requested by more than one client. One request by one client, the server has to handle multiple requests at the same time. Maybe when clients are not many, the program can run smoothly and successfully. However, once the number of users reaches a certain level, or a large amount of requests are sent at the same time, it is awfully difficult for the server to process the requests one by one, such as in the course selection period or at the double 11 shopping festival, that is, tomorrow. 
+In this picture, the server is requested by just two clients. But in fact, the server has to handle multiple requests at the same time. When clients are not so many, the program may run smoothly and successfully. However, once the number of users reaches a certain level, or a large amount of requests are sent at the same time, it is awfully difficult for the server to process the requests one by one, such as in the course selection period or at the double 11 shopping festival, that is, tomorrow. You could hardly imagine the server's situation when it receives millions of requests in a second.
 
 ![](../images/load_balance/load_balance.png)
 
-But what would happen when the server has trouble in handling the requests? Generally speaking, the client would requests and loads pages all the time, and then either gets a response very slowly, or fails to load pages, resulting in a very poor user experience to users. Of course it is very normal and not so bad. The worst situation is that the server can't bear the pressure and finally be done, so that users can't get anything, which is the most serious online accident.
+So what would happen when the server has trouble in handling the requests? Generally speaking, the client would send requests and load pages all the time, and then either gets a response very slowly, or fails to load pages, resulting in a very poor user experience to users. Of course it is very normal and not so bad. The worst situation is that the server can't bear the pressure and finally be done, so that users can't get anything, which is the most serious online accident.
 
 How to resolve the problem? Use the load balancing.
 
@@ -24,7 +22,7 @@ What is the load balancing?
 
 Load balancing refers to the process of distributing a set of tasks over a set of servers, with the aim of reducing the pressure of a single server and improving the overall performance.
 
-The "balance" here does not mean average distribution, but a more reasonable distribution according to the hardware performance (CPU, bandwidth, etc.) and the current load condition. For example, if a server is under great pressure, it will choose other idle servers to distribute. If a server has strong capacity to take pressure and high performance, it will take on more responsibilities.
+The "balance" here does not mean average distribution, but a more reasonable distribution according to the hardware performance (CPU, bandwidth, etc.) and the current load condition. For example, if a server is under great pressure, it will choose another idle server. If a server has strong capacity to take pressure and high performance, it will take on more responsibilities.
 
 There is a special intermediary between clients and servers, called load balancer, which is responsible for traffic forwarding. Before forwarding, it will select the appropriate server according to its specific load balancing algorithm.
 
@@ -44,19 +42,19 @@ Among them, the layer 4 load balancing, the layer 7 load balancing and the DNS l
 
 ![](../images/load_balance/load_balance_layer4.png)
 
-Four layer load balancing refers to the load balancing on the fourth layer transport layer in OSI model, which is based on IP address and port number.
+Layer 4 load balancing refers to the load balancing on the fourth layer, the transport layer in OSI model, which is based on IP address and port number.
 
 It mainly determines the final internal server through the target IP address and port in the message and the server selection mode set by the load balancer.
 
-It should be noted that the IP address received by the load balancer is a virtual IP, not an real IP of a server. The load balancer needs to convert the virtual IP into a real IP and forward it to the corresponding server. In other words, the client thinks that it has sent a request to a specific server, but it is not. The load balancer will forward its request to different servers. In other words, two same requests sent at the same time may be processed by different servers.
+It should be noted that the IP address received by the load balancer is a virtual IP, not an real IP of a server. The load balancer needs to convert the virtual IP into a real IP and forward it to the corresponding server. In other words, the client thinks that it has sent a request to a specific server, but it is not. The load balancer will forward its request to different servers. In other words, two same messages sent at the same time may be processed by two different servers.
 
 Application: LVS(Linux Virtual Server)
 
 ### Layer 7 load balancing
 
-Similarly, the seven layer load balancing corresponds to the the seventh layer, the application layer.
+The layer 7 load balancing corresponds to the the application layer, the seventh layer in OSI model.
 
-Seven layer load balancing is based on the application layer information such as URL. It mainly determines the final internal server through the information in the application layer protocol header such as HTTP and the real content in the message. 
+Layer 7 load balancing is based on the application layer information such as URL. It mainly determines the internal server through the information in the header of an application layer protocol such as HTTP and the real content in the message. 
 
 ![](../images/load_balance/load_balance_layer7.png)
 
@@ -71,9 +69,11 @@ Application: Ngnix
 
 ### DNS load balancing
 
-DNS load balancing is the earliest application of load balancing technology.
+DNS load balancing is the earliest application of load balancing technology. Because of its simplicity, it is still widely used in the world.
 
-Configure multiple IP addresses for a domain name in the DNS server. When querying this domain name, it will be assigned to one of the IP addresses, so that different clients can not access it the same IP address of the server, to achieve the purpose of load balancing.
+The core point is that a domain name corresponds to multiple IP addresses
+
+When querying this domain name, it will be assigned to one of the IP addresses, so that different clients can not access it the same IP address of the server, to achieve the purpose of load balancing.
 
 ![](../images/load_balance/load_balance_DNS.png)
 
