@@ -14,7 +14,7 @@ In this picture, the server is requested by just two clients. But in fact, the s
 
 ![](../images/load_balance/load_balance.png)
 
-So what would happen when the server has trouble in handling the requests? Generally speaking, the client would send requests and load pages all the time, and then either gets a response very slowly, or fails to load pages, resulting in a very poor user experience to users. Of course it is very normal and not so bad. The worst situation is that the server can't bear the pressure and finally be done, so that users can't get anything, which is the most serious online accident.
+So what would happen when the server has trouble in handling the requests? Generally speaking, the client would send requests and load pages all the time, and then either gets a response very slowly, or fails to load pages, resulting in a very poor user experience to users. Of course it seems very normal and not so bad. The worst situation is that the server can't bear the pressure and finally be done, so that users can't get anything, which is the most serious online accident.
 
 How to resolve the problem? Use the load balancing.
 
