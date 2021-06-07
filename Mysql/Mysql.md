@@ -764,7 +764,10 @@ mysql> select vend_id, count(*) from products group by vend_id with rollup;
 6. 使用 WHERE 子句进行汇总处理时，会先根据 WHERE 子句指定的条件进行过滤,然后再进行汇总处理。
 7. 使用`GROUP BY`默认会按`ORDER BY`进行升序排序
 
+>   [这篇博客对group by讲的比较通俗明白](https://blog.csdn.net/u014717572/article/details/80687042)
+
 ## 过滤分组
+
 使用`HAVING` 关键字进行过滤分组。
 
 由于 `WHERE` 过滤指定的是行而不是分组，所以不能完成过滤分组的任务。
