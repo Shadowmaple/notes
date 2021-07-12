@@ -128,15 +128,44 @@ go env      # 查看当前go环境信息
 go clean    # 清理我们编译生成的文件，比如生成的可执行文件，生成obj对象等
 ```
 # defer
-+   defer后面必须跟函数，如 `defer fmt.Println("ok")`
+1.  defer后面必须跟函数，如 `defer fmt.Println("ok")`
+2.  defer后面的函数在defer语句所在的函数结束时会被调用
+3.  如果函数里面有多条defer指令，他们的执行顺序是反序，即后定义的defer先执行，栈的方式
+4.  defer函数的参数是在defer语句出现的位置做计算的，而不是在函数运行的时候做计算，即所在函数结束的时候计算的。
+5.  defer与return执行顺序：return后的语句先，defer后。
 
-+   defer后面的函数在defer语句所在的函数结束时会被调用
+```go
+func returnFunc() int {
+    fmt.Println("return func called")
+    return 0
+}
 
-+   如果函数里面有多条defer指令，他们的执行顺序是反序，即后定义的defer先执行，栈的方式
+func foo() int {
+    defer func() {
+        fmt.Println("defer func called")
+    }()
+    return returnFunc()
+}
 
-+   defer函数的参数是在defer语句出现的位置做计算的，而不是在函数运行的时候做计算，即所在函数结束的时候计算的。
+/*
+结果：
+returnFunc called
+defer func called
+*/
+```
 
-+   defer函数会影响宿主函数的返回值
+6.  虽然先return再defer，但defer会影响返回值。比如以下程序，res的值为1，而不是0。
+
+```go
+func foo() (res int) {
+    defer func() {
+    	res = 1
+    }()
+    return res
+}
+```
+
+7.  defer 最大的功能是 panic 后依然有效，所以常用来捕获异常或关闭一些资源（比如锁、channel）
 
 # new() 和 make() 的区别
 看起来二者没有什么区别，都在堆上分配内存，但是它们的行为不同，适用于不同的类型。
