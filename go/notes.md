@@ -131,7 +131,6 @@ go clean    # 清理我们编译生成的文件，比如生成的可执行文件
 1.  defer后面必须跟函数，如 `defer fmt.Println("ok")`
 2.  defer后面的函数在defer语句所在的函数结束时会被调用
 3.  如果函数里面有多条defer指令，他们的执行顺序是反序，即后定义的defer先执行，栈的方式
-4.  defer函数的参数是在defer语句出现的位置做计算的，而不是在函数运行的时候做计算，即所在函数结束的时候计算的。
 5.  defer与return执行顺序：return后的语句先，defer后。
 
 ```go
