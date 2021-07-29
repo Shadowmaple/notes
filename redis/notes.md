@@ -1,12 +1,8 @@
 # Redis
 
-标签（空格分隔）： 未分类
-
----
-
-# 认识
+## 认识
 redis是基于键值对的非关系型数据库
-## 特性
+### 特性
 1. 高性能
     + 纯内存存储，数据存放于内存中
     + 单线程架构，避免竞态和线程转换
@@ -19,17 +15,18 @@ redis是基于键值对的非关系型数据库
 7. 主从复制
 8. 支持高可用和分布式
 
-## redis可执行文件
-| 可执行文件 | 作用 |
-| :---: | :---: |
-|redis-server| 启动redis
-|redis-cli | redis命令行客户端
-|redis-benchmark | redis基准测试工具
-|redis-check-aof | redis AOF持久化文件检测和修复工具
-|redis-check-dump | redis RDB持久化文件检测和修复工具
-|redis-sentinel | 启动redis sentinel
+### redis可执行文件
+| 可执行文件       | 作用                              |
+| ---------------- | --------------------------------- |
+| redis-server     | 启动redis                         |
+| redis-server     | 启动redis                         |
+| redis-cli        | redis命令行客户端                 |
+| redis-benchmark  | redis基准测试工具                 |
+| redis-check-aof  | redis AOF持久化文件检测和修复工具 |
+| redis-check-dump | redis RDB持久化文件检测和修复工具 |
+| redis-sentinel   | 启动redis sentinel                |
 
-# 运行
+## 运行
 三种方法启动Redis：默认配置、运行配置、配置文件启动
 ```shell
 # 关闭、启动、重启服务
@@ -50,7 +47,7 @@ redis-cli shutdown
 127.0.0.1:6379> exit
 ```
 
-# 操作命令
+## 操作命令
 ### 常用命令
 ```shell
 set / mset      # (批量)设置键值对
@@ -104,20 +101,20 @@ migrate         # 数据库迁移
 flushdb / flushall  # 删除(所有)数据库
 ```
 
-# 数据结构
-## 字符串
+## 数据结构
+### 字符串
 字符串是redis中最基础的数据结构，键都是字符串类型。
 
 字符串类型的值实际可以是字符串(简单的字符串、复杂的字符串(例如JSON、XML))、数字(整数、浮点数),甚至是二进制(图片、音频、视频),但值最大不能超过512MB
 
-### 内部编码
+#### 内部编码
 1. **int** ：8个字节的长整型。
 2. **embstr** ：小于等于39个字节的字符串。
 3. **raw** ：大于39个字节的字符串。
 
-## 哈希
+### 哈希
 在Redis中,哈希类型是指键值本身又是一个键值对结构,哈希中的映射关系叫作field-value
-### 命令
+#### 命令
 哈希的全局命令基本与字符串的相同，只是在细节上以及内部实现上有一些区别
 ```shell
 hset / hmset    # 设置键值对
@@ -131,7 +128,7 @@ hgetall         # 获取所有的field-value
 hstrlen         # 计算value的字符串长度
 ```
 
-### 内部编码
+#### 内部编码
 1. **ziplist(压缩列表)**：当哈希类型元素个数小于hash-max-ziplist-entries
 配置(默认512个)、同时所有值都小于hash-max-ziplist-value配置(默认64
 字节)时,Redis会使用ziplist作为哈希的内部实现,ziplist使用更加紧凑的
@@ -140,13 +137,13 @@ hstrlen         # 计算value的字符串长度
 用hashtable作为哈希的内部实现,因为此时ziplist的读写效率会下降,而
 hashtable的读写时间复杂度为O(1)
 
-## 列表
+### 列表
 列表中的每个字符串称为元素(element),一个列表最多可以存储 2^32-1 个元素
 
 特点:
 有序，支持索引，支持元素重复
 
-### 命令
+#### 命令
 | 操作类型 | 操作 |
 | :---: | :---: |
 | 添加 | lpush rpush linsert |
@@ -155,7 +152,7 @@ hashtable的读写时间复杂度为O(1)
 | 更改 | lset |
 | 阻塞操作 | blpop brpop |
 
-### 内部编码
+#### 内部编码
 1. **ziplist(压缩列表)**:当列表的元素个数小于list-max-ziplist-entries配置
 (默认512个),同时列表中每个元素的值都小于list-max-ziplist-value配置时
 (默认64字节),Redis会选用ziplist来作为列表的内部实现来减少内存的使
@@ -164,11 +161,11 @@ hashtable的读写时间复杂度为O(1)
 linkedlist作为列表的内部实现
 3. quicklist: 以一个ziplist为节点的linkedlist
 
-## 集合
+### 集合
 特点：
 无序，去重
 
-### 命令
+#### 命令
 集合内部
 ```shell
 sadd        # 添加
@@ -189,17 +186,18 @@ sunionstore
 sdiffstore  
 ```
 
-### 内部编码
+#### 内部编码
 1. **intset(整数集合)**:当集合中的元素都是整数且元素个数小于set-max-
 intset-entries配置(默认512个)时,Redis会选用intset来作为集合的内部实
 现,从而减少内存的使用。
 2. **hashtable(哈希表)**:当集合类型无法满足intset的条件时,Redis会使
 用hashtable作为集合的内部实现
 
-## 有序集合
-### 特点
+### 有序集合
+
+#### 特点
 有序，去重，通过分值实现有序，分值可重
-### 操作命令
+#### 操作命令
 有序集合的全局命令基本与集合相同，但还是有一些变化
 
 集合内部
@@ -221,7 +219,7 @@ zremrangebyscore
 zinterstore     # 交集
 zunionstore     # 并集
 ```
-### 内部编码
+#### 内部编码
 1. **ziplist(压缩列表)**:当有序集合的元素个数小于zset-max-ziplist-
 entries配置(默认128个),同时每个元素的值都小于zset-max-ziplist-value配
 置(默认64字节)时,Redis会用ziplist来作为有序集合的内部实现,ziplist
@@ -229,10 +227,10 @@ entries配置(默认128个),同时每个元素的值都小于zset-max-ziplist-va
 2. **skiplist(跳跃表)**:当ziplist条件不满足时,有序集合会使用skiplist作
 为内部实现,因为此时ziplist的读写效率会下降
 
-# python中的redis
+## python中的redis
 redis提供了很多的python语言的客户端，但最被广泛认可的是redis-py，本次便以redis-py 和 python3为例
 
-## 准备
+### 准备
 首先要安装redis-py库
 ```python
 $ pip3 install redis
@@ -245,7 +243,7 @@ $ pip3 install redis
 
 > redis 提供 Redis 和 StrictRedis两个类，StrictRedis用于实现大部分官方的命令，并使用官方的语法和命令，Redis是StrictRedis的子类，用于向后兼容旧版本的redis-py。官方推荐使用`StrictRedis`类。
 
-## redis连接
+### redis连接
 ```python
 import redis
 
@@ -276,7 +274,7 @@ b'bu'
 
 在python中 redis 的应用方法基本就是一般的redis应用方式，照着用就是了
 
-## 使用pipeline
+### 使用pipeline
 pipeline(流水线)实际上是对一组命令进行批量操作（相当于mset,mget），即将n次客户端与redis服务端之间的往返次数（RTT）合并为一次来回，有效节约在命令传输中所损耗的时间（如网络消耗）。
 
 ```python
@@ -297,8 +295,8 @@ b'3'
 ```
 
 
-# 慢查询服务
-## 慢查询
+## 慢查询服务
+### 慢查询
 > 慢查询日志就是系统在命令执行前后计算每条命令的执行时间,当超过预设阀值,就将这条命令的相关信息(例如:发生时间、耗时、命令的详细信息)记录下来
 
 一条Redis客户端命令的执行步骤如下：
@@ -311,7 +309,7 @@ b'3'
 
 redis使用一个列表来作为慢查询日志，但却并没有暴露该列表的键，只能通过一组特定的命令来管理
 
-## 配置
+### 配置
 配置参数
 1. slowlog-max-len : 决定慢查询日志列表存储的最大数量
 2. slowlog-log-slower-than : 决定记录慢查询的时间阀值，默认单位为微秒
@@ -327,7 +325,7 @@ config set slowlog-log-slower-than 10000
 config rewrite
 ```
 
-## 命令
+### 命令
 1. 获取慢查询日志
 ```shell
 # 获取慢查询日志，可选参数n为数量
@@ -352,7 +350,7 @@ slowlog len
 slowlog reset
 ```
 
-# 零散笔记
+## 其它
 
 容器型数据结构：不存在时自动创建，无元素时自动回收
 
