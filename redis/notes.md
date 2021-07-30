@@ -129,13 +129,8 @@ hstrlen         # 计算value的字符串长度
 ```
 
 #### 内部编码
-1. **ziplist(压缩列表)**：当哈希类型元素个数小于hash-max-ziplist-entries
-配置(默认512个)、同时所有值都小于hash-max-ziplist-value配置(默认64
-字节)时,Redis会使用ziplist作为哈希的内部实现,ziplist使用更加紧凑的
-结构实现多个元素的连续存储,所以在节省内存方面比hashtable更加优秀。
-2. **hashtable(哈希表)**：当哈希类型无法满足ziplist的条件时,Redis会使
-用hashtable作为哈希的内部实现,因为此时ziplist的读写效率会下降,而
-hashtable的读写时间复杂度为O(1)
+1. **ziplist(压缩列表)**：当哈希类型元素个数小于hash-max-ziplist-entries 配置(默认512个)、同时所有值都小于hash-max-ziplist-value配置(默认64字节)时，Redis会使用ziplist作为哈希的内部实现，ziplist使用更加紧凑的结构实现多个元素的连续存储，所以在节省内存方面比hashtable更加优秀。
+2. **hashtable(哈希表)**：当哈希类型无法满足ziplist的条件时，Redis会使用hashtable作为哈希的内部实现，因为此时ziplist的读写效率会下降，而hashtable的读写时间复杂度为O(1)
 
 ### 列表
 列表中的每个字符串称为元素(element),一个列表最多可以存储 2^32-1 个元素
@@ -153,13 +148,9 @@ hashtable的读写时间复杂度为O(1)
 | 阻塞操作 | blpop brpop |
 
 #### 内部编码
-1. **ziplist(压缩列表)**:当列表的元素个数小于list-max-ziplist-entries配置
-(默认512个),同时列表中每个元素的值都小于list-max-ziplist-value配置时
-(默认64字节),Redis会选用ziplist来作为列表的内部实现来减少内存的使
-用。
-2. **linkedlist(链表)**:当列表类型无法满足ziplist的条件时,Redis会使用
-linkedlist作为列表的内部实现
-3. quicklist: 以一个ziplist为节点的linkedlist
+1. **ziplist(压缩列表)**：当列表的元素个数小于list-max-ziplist-entries配置(默认512个)，同时列表中每个元素的值都小于list-max-ziplist-value配置时(默认64字节)，Redis会选用ziplist来作为列表的内部实现来减少内存的使用。
+2. **linkedlist(链表)**：当列表类型无法满足ziplist的条件时，Redis会使用linkedlist作为列表的内部实现
+3. **quicklist**: 以一个ziplist为节点的linkedlist
 
 ### 集合
 特点：
@@ -188,10 +179,8 @@ sdiffstore
 
 #### 内部编码
 1. **intset(整数集合)**:当集合中的元素都是整数且元素个数小于set-max-
-intset-entries配置(默认512个)时,Redis会选用intset来作为集合的内部实
-现,从而减少内存的使用。
-2. **hashtable(哈希表)**:当集合类型无法满足intset的条件时,Redis会使
-用hashtable作为集合的内部实现
+intset-entries配置(默认512个)时，Redis会选用intset来作为集合的内部实现，从而减少内存的使用。
+2. **hashtable(哈希表)**:当集合类型无法满足intset的条件时，Redis会使用hashtable作为集合的内部实现
 
 ### 有序集合
 
@@ -220,12 +209,9 @@ zinterstore     # 交集
 zunionstore     # 并集
 ```
 #### 内部编码
-1. **ziplist(压缩列表)**:当有序集合的元素个数小于zset-max-ziplist-
-entries配置(默认128个),同时每个元素的值都小于zset-max-ziplist-value配
-置(默认64字节)时,Redis会用ziplist来作为有序集合的内部实现,ziplist
-可以有效减少内存的使用。
-2. **skiplist(跳跃表)**:当ziplist条件不满足时,有序集合会使用skiplist作
-为内部实现,因为此时ziplist的读写效率会下降
+1. **ziplist(压缩列表)**：当有序集合的元素个数小于zset-max-ziplist-
+entries配置(默认128个)，同时每个元素的值都小于zset-max-ziplist-value配置(默认64字节)时，Redis会用ziplist来作为有序集合的内部实现，ziplist可以有效减少内存的使用。
+2. **skiplist(跳跃表)**：当ziplist条件不满足时，有序集合会使用skiplist作为内部实现，因为此时ziplist的读写效率会下降
 
 ## python中的redis
 redis提供了很多的python语言的客户端，但最被广泛认可的是redis-py，本次便以redis-py 和 python3为例
