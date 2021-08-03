@@ -102,6 +102,9 @@ flushdb / flushall  # 删除(所有)数据库
 ```
 
 ## 数据结构
+
+![数据结构](https://images2017.cnblogs.com/blog/1260387/201712/1260387-20171217225104530-830166094.png)
+
 ### 字符串
 字符串是redis中最基础的数据结构，键都是字符串类型。
 
@@ -113,7 +116,7 @@ flushdb / flushall  # 删除(所有)数据库
 3. **raw** ：大于39个字节的字符串。
 
 ### 哈希
-在Redis中,哈希类型是指键值本身又是一个键值对结构,哈希中的映射关系叫作field-value
+在Redis中，哈希类型是指键值本身又是一个键值对结构，哈希中的映射关系叫作field-value
 #### 命令
 哈希的全局命令基本与字符串的相同，只是在细节上以及内部实现上有一些区别
 ```shell
@@ -129,11 +132,11 @@ hstrlen         # 计算value的字符串长度
 ```
 
 #### 内部编码
-1. **ziplist(压缩列表)**：当哈希类型元素个数小于hash-max-ziplist-entries 配置(默认512个)、同时所有值都小于hash-max-ziplist-value配置(默认64字节)时，Redis会使用ziplist作为哈希的内部实现，ziplist使用更加紧凑的结构实现多个元素的连续存储，所以在节省内存方面比hashtable更加优秀。
+1. **ziplist(压缩列表)**：当哈希类型元素个数小于`hash-max-ziplist-entries` 配置(默认512个)、同时所有值都小于`hash-max-ziplist-value`配置(默认64字节)时，Redis会使用 ziplist 作为哈希的内部实现，ziplist使用更加紧凑的结构实现多个元素的连续存储，所以在**节省内存**方面比hashtable更加优秀。
 2. **hashtable(哈希表)**：当哈希类型无法满足ziplist的条件时，Redis会使用hashtable作为哈希的内部实现，因为此时ziplist的读写效率会下降，而hashtable的读写时间复杂度为O(1)
 
 ### 列表
-列表中的每个字符串称为元素(element),一个列表最多可以存储 2^32-1 个元素
+列表中的每个字符串称为元素(element)，一个列表最多可以存储 `2^32-1` 个元素
 
 特点:
 有序，支持索引，支持元素重复
@@ -148,7 +151,7 @@ hstrlen         # 计算value的字符串长度
 | 阻塞操作 | blpop brpop |
 
 #### 内部编码
-1. **ziplist(压缩列表)**：当列表的元素个数小于list-max-ziplist-entries配置(默认512个)，同时列表中每个元素的值都小于list-max-ziplist-value配置时(默认64字节)，Redis会选用ziplist来作为列表的内部实现来减少内存的使用。
+1. **ziplist(压缩列表)**：当列表的元素个数小于`list-max-ziplist-entries`配置(默认512个)，同时列表中每个元素的值都小于`list-max-ziplist-value`配置时(默认64字节)，Redis会选用ziplist来作为列表的内部实现来减少内存的使用。
 2. **linkedlist(链表)**：当列表类型无法满足ziplist的条件时，Redis会使用linkedlist作为列表的内部实现
 3. **quicklist**: 以一个ziplist为节点的linkedlist
 
@@ -178,9 +181,8 @@ sdiffstore
 ```
 
 #### 内部编码
-1. **intset(整数集合)**:当集合中的元素都是整数且元素个数小于set-max-
-intset-entries配置(默认512个)时，Redis会选用intset来作为集合的内部实现，从而减少内存的使用。
-2. **hashtable(哈希表)**:当集合类型无法满足intset的条件时，Redis会使用hashtable作为集合的内部实现
+1. **intset(整数集合)**：当集合中的元素都是整数且元素个数小于`set-max-intset-entries`配置(默认512个)时，Redis会选用 intset 来作为集合的内部实现，从而减少内存的使用。
+2. **hashtable(哈希表)**：当集合类型无法满足intset的条件时，Redis会使用hashtable作为集合的内部实现
 
 ### 有序集合
 
@@ -209,8 +211,7 @@ zinterstore     # 交集
 zunionstore     # 并集
 ```
 #### 内部编码
-1. **ziplist(压缩列表)**：当有序集合的元素个数小于zset-max-ziplist-
-entries配置(默认128个)，同时每个元素的值都小于zset-max-ziplist-value配置(默认64字节)时，Redis会用ziplist来作为有序集合的内部实现，ziplist可以有效减少内存的使用。
+1. **ziplist(压缩列表)**：当有序集合的元素个数小于`zset-max-ziplist-entries`配置(默认128个)，同时每个元素的值都小于`zset-max-ziplist-value`配置(默认64字节)时，Redis会用ziplist来作为有序集合的内部实现，ziplist可以有效减少内存的使用。
 2. **skiplist(跳跃表)**：当ziplist条件不满足时，有序集合会使用skiplist作为内部实现，因为此时ziplist的读写效率会下降
 
 ## python中的redis
@@ -335,6 +336,17 @@ slowlog len
 ```shell
 slowlog reset
 ```
+
+
+
+## 简述Redis过期策略
+
+1.  定期删除：redis默认是每100ms就随机抽取一些设置了过期时间的key，并检查其是否过期，如果过期就删除。因此该删除策略并不会删除所有的过期key。
+2.  惰性删除：在客户端需要获取某个key时，redis将首先进行检查，若该key设置了过期时间并已经过期就会删除。
+
+实际上redis结合上述两种手段结合起来，保证删除过期的key。
+
+
 
 ## 其它
 
