@@ -12,6 +12,11 @@ golang程序变量会携带有一组校验数据，用来证明它的整个生�
 +   **slice 的背后数组被重新分配了，因为 append 时可能会超出其容量( cap )。** slice 初始化的地方在编译时是可以知道的，它最开始会在栈上分配。如果切片背后的存储要基于运行时的数据进行扩充，就会在堆上分配。
 +   **在 interface 类型上调用方法。** 在 interface 类型上调用方法都是动态调度的 —— 方法的真正实现只能在运行时知道。想像一个 io.Reader 类型的变量 r , 调用 r.Read(b) 会使得 r 的值和切片b 的背后存储都逃逸掉，所以会在堆上分配。
 
+map[int]*struct{} 呢？
+
+
+
 ### Ref
 
 -   https://github.com/lifei6671/interview-go/blob/master/question/q019.md
+-   https://draveness.me/golang/docs/part3-runtime/ch07-memory/golang-memory-allocator/
