@@ -24,7 +24,8 @@
 | D（uninterruptible sleep）| 不可中断阻塞，通常为 IO 阻塞，不可被信号唤醒 |
 | S（interruptible sleep） | 可中断阻塞，系统资源被其它进程占用，该进程正在等待某个事件完成，可被信号唤醒 |
 | Z（zombie）    | 僵死，进程已经终止但是尚未被其父进程获取信息  |
-| T（stopped）   | 结束，进程既可以被作业控制信号结束，也可能是正在被追踪 |
+| T（stopped or traced） | 暂停或追踪状态 |
+| X（Exited） | 退出 |
 
 ### 孤儿进程
 

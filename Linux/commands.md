@@ -38,7 +38,7 @@
 +   zip
 +   gzip
 
-## 进程服务
+## 系统服务
 
 +   systemctl：系统服务
 +   jobs：查看当前shell的任务
@@ -47,4 +47,7 @@
 +   top：动态进程查看
 +   ps：静态进程查看
 +   nohup
-+   netstat
++   netstat：网络状态
++   vmstat：虚拟内存状态
++   free：空闲内存
+
