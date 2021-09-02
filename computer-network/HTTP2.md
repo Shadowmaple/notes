@@ -82,7 +82,7 @@ HTTP/2 采用**二进制格式**传输帧，而非 HTTP 1.x 的文本格式，�
 5.  减少网络的压力。二进制传输，更紧凑；首部压缩，减少总请求规模；
 6.  有效利用网络资源；
 7.  多重传输；
-8.  在客户端和服务器之间进行更高效的数据处理。。
+8.  在客户端和服务器之间进行更高效的数据处理。
 
 >   +   possibility to speed up the work of complex pages that use HTML, CSS, JavaScript, a large number of pictures due to the competent prioritization;
 >   +   obligatory use of TLS allows providing maximum protection;
