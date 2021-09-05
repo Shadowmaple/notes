@@ -12,7 +12,7 @@ Web应用对于用户提交的参数名或参数值未做过滤就直接拼接�
 
 XSS的重点不在于跨站点，而在于脚本的执行，对Web服务器本身无直接危害。其原理就是： 攻击者在web页面中插入一些恶意的script代码，当用户浏览该页面的时候，嵌入到web页面中script代码会执行，因此达到恶意攻击用户的目的。XSS攻击最主要有如下分类：反射型、存储型、及 DOM-based型。 反射性和DOM-baseed型可以归类为非持久性XSS攻击。存储型可以归类为持久性XSS攻击。
 
-## 3. CSRF(Cross-Site Request Forgery)跨站请求伪造攻击
+## 3. CSRF(Cross-Site Request Forgery)跨站请求伪造
 
 ### 漏洞描述：
 

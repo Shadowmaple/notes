@@ -289,6 +289,7 @@ Q10：若三次握手第一次SYN滞留网络了，等待重传建立连接后�
 
 -   [CS-Notes](http://www.cyc2018.xyz/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/%E7%BD%91%E7%BB%9C%E5%9F%BA%E7%A1%80/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%20-%20%E4%BC%A0%E8%BE%93%E5%B1%82.html)
 -   [面试问题详解——TCP](https://leetcode-cn.com/circle/discuss/aqTOW4/)
+-   《TCP/IP详解卷一》
 
 
 

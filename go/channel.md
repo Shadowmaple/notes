@@ -1,5 +1,14 @@
 ## channel
 
+## create and init
+
+```go
+ch := make(chan int)
+ch2 := new(chan int)
+```
+
+make和new都能创建，但是channel是引用类型的，应该用前者，后者返回的是`*chan int`，而且是未初始化的，即`nil channel`
+
 ### closed channel
 
 被关闭的 channel 不能再向其中发送内容，否则会 panic
@@ -44,6 +53,19 @@ var a chan int
 var a chan int
 close(a) // panic: close of nil channel
 ```
+
+nil channel 会对读写进行永久**阻塞**，而不是pannic：
+
+```go
+fatal error: all goroutines are asleep - deadlock!
+
+goroutine 1 [chan send (nil chan)]:
+main.main()
+	/home/lawler/repository/notes/go/a.go:7 +0x3a
+exit status 2
+```
+
+
 
 ### close channel principles
 
