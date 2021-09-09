@@ -186,6 +186,12 @@ Q1：混合写屏障中，栈上，一个黑色对象引用一个白色对象？
 
 ？？
 
+
+
+Q2：怎么通过一个对象，查找到下一个对象？值和指针查找的区别？
+
+指针类型内存区域有部分
+
 ## Ref
 
 -   主要：[Golang修养之路](https://www.kancloud.cn/aceld/golang/1958308#1___166)；[对应视频](https://www.bilibili.com/video/BV1wz4y1y7Kd?p=14&spm_id_from=pageDriver)
