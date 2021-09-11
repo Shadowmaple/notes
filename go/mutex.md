@@ -244,15 +244,11 @@ func (m *Mutex) lockSlow() {
 			if old&mutexStarving != 0 {
                 // 当前goroutine被唤醒且互斥锁处于饥饿模式
 
-				// ownership was handed off to us but mutex is in somewhat
-				// inconsistent state: mutexLocked is not set and we are still
-				// accounted as waiter. Fix that.
                 // 这时候控制权被移交到给了我们，但 mutex 不知道怎么回事处于不一致的状态:
                 // mutexLocked 标识位还没有设置，但我们却仍然认为当前 goroutine 正在等待这个 mutex。说明是个 bug，需要修正
-                // （有点没看懂。。。）
                 // 状态是上锁或是woken为1，或者没有等待的g，则报错：
                 // 1.到达这里说明是unlock的，不然不会唤醒一个g
-                // 2.woken为1报错？？
+                // 2.woken为1报错？unlock时会唤醒一个g执行到这里说明锁的woken位是0
                 // 3.没有等待的g就不会是饥饿模式了，也不会有该被唤醒的g
 				if old&(mutexLocked|mutexWoken) != 0 || old>>mutexWaiterShift == 0 {
 					throw("sync: inconsistent mutex state")
@@ -293,13 +289,91 @@ func (m *Mutex) lockSlow() {
 
 #### 概述
 
+一个Goroutine unlock的大体流程：
+
+1.  首先原子操作解锁，locked 位-1
+2.  判断状态是否为0，为0说明没有其它在等待的g，直接退出
+3.  若有其它等待的g，则需要尝试唤醒
+    1.  正常模式：通过判断等待数量、locked位、woken位和starving位，是否需要唤醒一个g，需要则尝试CAS获取唤醒的权力，唤醒
+    2.  饥饿模式：直接唤醒等待队头的g
+
 
 
 #### 源码分析
 
+```go
+// 锁不会与特定的goroutine关联，
+// 即允许一个协程加锁，但由另一个协程解锁
+func (m *Mutex) Unlock() {
+	// ...race的相关判断
 
+	// Fast path: drop lock bit.
+    // 对没有等待队列的锁直接解锁
+    // 若new!=0，说明存在等待加锁的协程，需要调用unlockSlow处理一些逻辑
+	new := atomic.AddInt32(&m.state, -mutexLocked)
+	if new != 0 {
+		// Outlined slow path to allow inlining the fast path.
+		// To hide unlockSlow during tracing we skip one extra frame when tracing GoUnblock.
+		m.unlockSlow(new)
+	}
+}
+```
+
+unlockSlow的逻辑：
+
+```go
+func (m *Mutex) unlockSlow(new int32) {
+    // 此时new已经-1，即为解锁后的值，正常情况下最低位mutexLocked为0
+    // 若+1后为0，则原本为0，即unlocked，即解了一个未加锁的锁，属于运行时错误
+	if (new+mutexLocked)&mutexLocked == 0 {
+		throw("sync: unlock of unlocked mutex")
+	}
+
+    // 若是正常模式，如果需要唤醒某个g，则尝试去唤醒
+    // 若是饥饿模式，释放信号给等待的队头g，不用设置唤醒标识位
+	if new&mutexStarving == 0 {
+		old := new
+		for {
+			// If there are no waiters or a goroutine has already
+			// been woken or grabbed the lock, no need to wake anyone.
+			// In starvation mode ownership is directly handed off from unlocking
+			// goroutine to the next waiter. We are not part of this chain,
+			// since we did not observe mutexStarving when we unlocked the mutex above.
+			// So get off the way.
+            // 如果没有等待的g，或locked的（已经有其它g上锁了）、唤醒了的（有其它g在等待）、或饥饿模式，则直接return，不用再唤醒一个g了
+			if old>>mutexWaiterShift == 0 || old&(mutexLocked|mutexWoken|mutexStarving) != 0 {
+				return
+			}
+            // 获取唤醒的权利。
+            // 等待数-1，将设置唤醒位，并使用CAS更新状态，失败则重复尝试
+			new = (old - 1<<mutexWaiterShift) | mutexWoken
+			if atomic.CompareAndSwapInt32(&m.state, old, new) {
+                // 释放信号，唤醒一个g
+				runtime_Semrelease(&m.sema, false, 1)
+				return
+			}
+			old = m.state
+		}
+	} else {
+		runtime_Semrelease(&m.sema, true, 1)
+	}
+}
+```
+
+
+
+### semaphore
 
 
 
 ## RWMutex
 
+读写锁的实现类似于操作系统的PV操作的信号量机制，读者写者问题、生产者消费者问题……
+
+
+
+### 读锁
+
+
+
+### 写锁
