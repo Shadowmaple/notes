@@ -1,4 +1,4 @@
-## channel
+# channel
 
 ## create and init
 
@@ -154,35 +154,31 @@ func main() {
 
 最后，如果确定不会有 goroutine 在通信过程中被阻塞，也可以不关闭 channel，等待 GC 对其进行回收。
 
-### 源码分析
 
-#### hchan
 
-hchan 是 channel 在 runtime 中的数据结构
+## 底层实现
+
+### 基本结构
+
+channel 的底层比较容易理解，主要就是一个 hchan 的结构体，它是一个循环队列，队头和队尾分别指向接受的数据和发送的数据。
+
+另外，它有使用锁来保证其操作的原子性。
+
+hchan 是 channel 在 runtime 中的数据结构：
 
 ```go
 // channel 在 runtime 中的结构体
 type hchan struct {
-    // 队列中目前的元素计数
-    qcount uint // total data in the queue
-    // 环形队列的总大小，ch := make(chan int, 10) => 就是这里这个 10
-    dataqsiz uint // size of the circular queue
-    // void * 的内存 buffer 区域
-    buf unsafe.Pointer // points to an array of dataqsiz elements
-    // sizeof chan 中的数据
-    elemsize uint16
-    // 是否已被关闭
-    closed uint32
-    // runtime._type，代表 channel 中的元素类型的 runtime 结构体
-    elemtype *_type // element type
-    // 发送索引
-    sendx uint // send index
-    // 接收索引
-    recvx uint // receive index
-    // 接收 goroutine 对应的 sudog 队列
-    recvq waitq // list of recv waiters
-    // 发送 goroutine 对应的 sudog 队列
-    sendq waitq // list of send waiters
+    qcount uint        // 队列中目前的元素总数
+    dataqsiz uint      // 循环队列的长度，make(chan int, 10) => 就是这里这个 10
+    buf unsafe.Pointer // 指向buffer数据缓冲区的指针
+    elemsize uint16    // chan中元素类型的大小，如sizeof(int)
+    closed uint32      // 是否已被关闭
+    elemtype *_type    // 表示 channel 中的元素类型的指针
+    sendx uint         // 发送索引，指向队头
+    recvx uint         // 接收索引，指向队尾
+    recvq waitq        // 等待接收数据的 goroutine 队列，g处于阻塞
+    sendq waitq        // 等待发送数据的 goroutine 队列，g处于阻塞
 
     // lock protects all fields in hchan, as well as several
     // fields in sudogs blocked on this channel.
@@ -190,7 +186,17 @@ type hchan struct {
     // Do not change another G's status while holding this lock
     // (in particular, do not ready a G), as this can deadlock
     // with stack shrinking.
+    // 
+    // 使用 runtime.mutex 来保护 chan 的线程安全，在 hchan 的各个领域，以及一些阻塞g的相关领域
+    // 不要在持有锁的时候更改其它g的状态，尤其不要将一个g设为准备状态，因为这会在栈收缩的时候导致死锁
+    // （可能理解会有偏差……）
     lock mutex
+}
+
+// 阻塞的等待goroutine队列，链表形式
+type waitq struct {
+	first *sudog
+	last  *sudog
 }
 ```
 
@@ -198,9 +204,100 @@ type hchan struct {
 
 
 
->   https://github.com/cch123/golang-notes/blob/master/channel.md
+一些常量的定义：
 
-### 参考
+```go
+const (
+	maxAlign  = 8
+	hchanSize = unsafe.Sizeof(hchan{}) + uintptr(-int(unsafe.Sizeof(hchan{}))&(maxAlign-1))
+	debugChan = false
+)
+```
+
+
+
+### init
+
+创建并初始化一个channel，使用的是`makechan`和`makechan64`方法，后者是为了应对缓冲区大小大于2\^64的情况（毕竟存储元素数量的类型是uint，最大是2\^64个），但在代码中有点迷，没明白啥意思……
+
+主要是`makechan`这个函数（不同版本会有差异）：
+
+```go
+func makechan(t *chantype, size int) *hchan {
+	elem := t.elem
+
+	// compiler checks this but be safe.
+	if elem.size >= 1<<16 {
+		throw("makechan: invalid channel element type")
+	}
+	if hchanSize%maxAlign != 0 || elem.align > maxAlign {
+		throw("makechan: bad alignment")
+	}
+
+    // 需要分配的内存大小
+	mem, overflow := math.MulUintptr(elem.size, uintptr(size))
+	if overflow || mem > maxAlloc-hchanSize || size < 0 {
+		panic(plainError("makechan: size out of range"))
+	}
+
+	// Hchan does not contain pointers interesting for GC when elements stored in buf do not contain pointers.
+	// buf points into the same allocation, elemtype is persistent.
+	// SudoG's are referenced from their owning thread so they can't be collected.
+	// TODO(dvyukov,rlh): Rethink when collector can move allocated objects.
+    // 
+    // 初始化hchan的一些字段，注释说明了一些字段需要在runtime时才会有值
+    // 当buffer中的元素不包含指针的时候，hchan就不会包含和GC相关的信息
+    // buf 指向同一块分配区，元素类型是持久的
+    // SudoG 从它们占有的线程引入，所以无法收集它们的信息，需要在runtime时收集
+	var c *hchan
+	switch {
+	case mem == 0:
+		// Queue or element size is zero.
+        // 如果 channel 的缓冲区大小为 0: ch := make(chan int)
+        // 或者 channel 的元素大小为 0: struct{}{}
+        // 分配一段hcan结构大小的内存
+		c = (*hchan)(mallocgc(hchanSize, nil, true))
+		// Race detector uses this location for synchronization.
+		c.buf = c.raceaddr()
+	case elem.ptrdata == 0:
+        // 若元素不包含指针，则一次性为hchan和缓冲区大小分配内存
+        // 为什么要这样？
+        // 这种情况下 gc 不会对 channel 中的元素进行 scan？
+		c = (*hchan)(mallocgc(hchanSize+mem, nil, true))
+		c.buf = add(unsafe.Pointer(c), hchanSize)
+	default:
+        // 元素包含指针，即是指针类型的元素时
+        // 和上面那个 case 的写法的区别：调用了两次分配空间的函数 new/mallocgc
+		c = new(hchan)
+		c.buf = mallocgc(mem, elem, true)
+	}
+
+	c.elemsize = uint16(elem.size)
+	c.elemtype = elem
+	c.dataqsiz = uint(size)
+
+	if debugChan {
+		print("makechan: chan=", c, "; elemsize=", elem.size, "; dataqsiz=", size, "\n")
+	}
+	return c
+}
+```
+
+
+
+### send
+
+
+
+### receive
+
+
+
+### close
+
+
+
+## 参考
 
 -   [码农桃花源-如何优雅地关闭 channel](https://qcrao91.gitbook.io/go/channel/ru-he-you-ya-di-guan-bi-channel)
 -   [Golang-notes/channel](https://github.com/cch123/golang-notes/blob/master/channel.md)
