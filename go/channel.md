@@ -31,7 +31,7 @@ x := <-ch
 
 如果 channel 中有值，这里特指带 buffer 的 channel，那么就从 channel 中取，如果没有值，那么会返回 channel 元素的 0 值。
 
-区分是返回的零值还是 buffer 中的值可使用 comma, ok 语法：
+区分是返回的零值还是 buffer 中的值可使用 `comma, ok` 写法：
 
 ```go
 x, ok := <-ch
@@ -54,7 +54,7 @@ var a chan int
 close(a) // panic: close of nil channel
 ```
 
-nil channel 会对读写进行永久**阻塞**，而不是pannic：
+nil channel 会对**读写**进行永久**阻塞**（一个g会造成死锁），而不是pannic：
 
 ```go
 fatal error: all goroutines are asleep - deadlock!
@@ -295,13 +295,34 @@ func chansend1(c *hchan, elem unsafe.Pointer) {
 }
 ```
 
-chansend：
+chansend 大致可以根据不同情况分为以下三部分：
 
-1.  调用 runtime.getg 获取发送数据使用的 Goroutine；
-2.  执行 runtime.acquireSudog 获取 runtime.sudog 结构并设置这一次阻塞发送的相关信息，例如发送的 Channel、是否在 select 中和待发送数据的内存地址等；
-3.  将刚刚创建并初始化的 runtime.sudog 加入发送等待队列，并设置到当前 Goroutine 的 waiting 上，表示 Goroutine 正在等待该 sudog 准备就绪；
-4.  调用 runtime.goparkunlock 将当前的 Goroutine 陷入沉睡等待唤醒；
-5.  被调度器唤醒后会执行一些收尾工作，将一些属性置零并且释放 runtime.sudog 结构体；
+1.  **直接发送**：若存在等待的接受者，直接调用`runtime.send`发送数据给阻塞的g；
+2.  **数据写入缓冲区**：若缓冲区存在空闲空间，则将数据拷贝到缓冲区中；
+3.  **阻塞发送**：若不存在缓冲区或已满，则挂起g，等待被唤醒。
+
+
+
+chansend大致流程：
+
+1.  判断是channel否为nil，是则永久挂起阻塞
+2.  加锁
+3.  判断是否closed，若是则pannic
+4.  能否直接发送：
+    1.  若存在等待的接受者，则调用`runtime.send`发送给它
+    2.  在send函数中解锁返回
+5.  缓冲区是否有空闲空间：
+    1.  计算存储的位置，并进行数据拷贝；
+    2.  更新hchan队列元数据，sendx, recvx, qcount 等字段；
+    3.  解锁返回
+6.  进行阻塞发送流程：
+    1.  调用 `runtime.getg` 获取发送数据使用的 Goroutine；
+    2.  执行 `runtime.acquireSudog` 获取 `runtime.sudog` 结构并设置这一次阻塞发送的相关信息，例如发送的 Channel、是否在 select 中和待发送数据的内存地址等；
+    3.  将刚刚创建并初始化的 `sudog` 加入发送等待队列，并设置到当前 g 的 waiting 字段上，表示 g 正在等待该 sudog 准备就绪；
+    4.  调用 `runtime.goparkunlock` 将当前的 g 状态从Grunning变为Gwaiting，陷入沉睡等待唤醒；（挂起应该会解锁？）
+    5.  被调度器唤醒后，判断channel是否closed了
+    6.  执行一些收尾工作，将一些属性置零并且释放 runtime.sudog 结构体；
+    7.  返回
 
 
 
@@ -344,6 +365,10 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 		unlock(&c.lock)
 		panic(plainError("send on closed channel"))
 	}
+    
+    // -----------
+    // 1.直接发送
+    // -----------
 
     // 从等待的队列中取出第一个goroutine，
     // 若g不为空，则直接向g发送数据，忽略buffer缓冲区，即不用先放到buffer中
@@ -352,6 +377,10 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 		send(c, sg, ep, func() { unlock(&c.lock) }, 3)
 		return true
 	}
+    
+    // ----------------
+    // 2. 缓冲区数据发送
+    // ----------------
 
     // 当缓冲区还有空间，则将数据入队
 	if c.qcount < c.dataqsiz {
@@ -367,6 +396,10 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 		unlock(&c.lock)
 		return true
 	}
+    
+    // --------------
+    // 3. 阻塞发送阶段
+    // --------------
 
     // 如果非阻塞的，直接返回false，表示发送失败
     // 阻塞模式的还要等待
@@ -397,14 +430,16 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
     // 将sudog放入channel的发送等待队列
 	c.sendq.enqueue(mysg)
     // 挂起goroutine，状态 Grunning -> Gwaiting
+    // To Do：解锁呢？
 	gopark(chanparkcommit, unsafe.Pointer(&c.lock), waitReasonChanSend, traceEvGoBlockSend, 2)
 	// Ensure the value being sent is kept alive until the
 	// receiver copies it out. The sudog has a pointer to the
 	// stack object, but sudogs aren't considered as roots of the
 	// stack tracer.
+    // To Do：？？？
 	KeepAlive(ep)
 
-	// someone woke us up.
+    // 对比当前的sudog是否是goroutine上的sudog
 	if mysg != gp.waiting {
 		throw("G waiting list is corrupted")
 	}
@@ -429,10 +464,10 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 
 
 
-实际的发送会调用`send`函数：
+向一个空缓冲区的channel发送会调用`runtime.send`函数：
 
-1.  调用 runtime.sendDirect 将发送的数据直接拷贝到 x = <-c 表达式中变量 x 所在的内存地址上；
-2.  调用 runtime.goready 将等待接收数据的 Goroutine 标记成可运行状态 Grunnable 并把该 Goroutine 放到发送方所在的处理器的 runnext 上等待执行，该处理器在下一次调度时会立刻唤醒数据的接收方；
+1.  形如`x = <-ch`，若要接收的变量x不为nil，即存在分配的地址，则调用 `sendDirect` 将数据直接拷贝到 x 所在的内存地址上；
+2.  调用 `runtime.goready` 将等待接收数据的 g 标记成可运行状态，并把该 g 放到发送方所在的处理器的 runnext 上等待执行，该处理器在下一次调度时会立刻唤醒数据的接收方；
 
 ```go
 // 向一个空缓冲区的channel执行发送操作
@@ -444,7 +479,8 @@ func send(c *hchan, sg *sudog, ep unsafe.Pointer, unlockf func(), skip int) {
 	// raceenabled的一些操作，先忽略
     // ……
 
-    // 如果x = <- c 中 x 不为nil，则直接拷贝数据到x的地址空间
+    // 形如 x = <-ch，且 x 不为 nil，则直接拷贝数据到 x 的地址空间
+    // 形如 <-ch，则不用拷贝数据
 	if sg.elem != nil {
 		sendDirect(c.elemtype, sg, ep)
         // TO DO：为什么要设为nil？为了防止多个channel重复拷贝？
@@ -452,7 +488,7 @@ func send(c *hchan, sg *sudog, ep unsafe.Pointer, unlockf func(), skip int) {
 	}
 	gp := sg.g // 获取goroutine地址
 	unlockf() // 解锁
-	gp.param = unsafe.Pointer(sg)
+	gp.param = unsafe.Pointer(sg) // ？？
 	if sg.releasetime != 0 {
 		sg.releasetime = cputicks()
 	}
@@ -463,18 +499,14 @@ func send(c *hchan, sg *sudog, ep unsafe.Pointer, unlockf func(), skip int) {
 
 
 
-简单梳理和总结一下使用 `ch <- i` 表达式向 Channel 发送数据时遇到的几种情况：
-
-1.  如果当前 Channel 的 recvq 上存在已经被阻塞的 Goroutine，那么会直接将数据发送给当前 Goroutine 并将其设置成下一个运行的 Goroutine；
-2.  如果 Channel 存在缓冲区并且其中还有空闲的容量，我们会直接将数据存储到缓冲区 sendx 所在的位置上；
-3.  如果不满足上面的两种情况，会创建一个 runtime.sudog 结构并将其加入 Channel 的 sendq 队列中，当前 Goroutine 也会陷入阻塞等待其他的协程从 Channel 接收数据；
-
-
-
 发送数据的过程中包含几个会触发 Goroutine 调度的时机：
 
-1.  发送数据时发现 Channel 上存在等待接收数据的 Goroutine，立刻设置处理器的 runnext 属性，但是并不会立刻触发调度；
-2.  发送数据时并没有找到接收方并且缓冲区已经满了，这时会将自己加入 Channel 的 sendq 队列并调用 runtime.goparkunlock 触发 Goroutine 的调度让出处理器的使用权；
+1.  发送数据时发现 Channel 上存在等待接收数据的 g，立刻设置处理器的 runnext 属性，但是并不会立刻触发调度；
+2.  发送数据时并没有找到接收方并且缓冲区已经满了，这时会将自己加入 Channel 的 sendq 队列并调用 `runtime.goparkunlock` 触发 g 的调度让出处理器的使用权；
+
+
+
+TO DO：goparkunlock 挂起做了什么？
 
 
 
