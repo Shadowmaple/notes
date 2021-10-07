@@ -297,6 +297,29 @@ func chansend1(c *hchan, elem unsafe.Pointer) {
 }
 ```
 
+而 `select` 中的发送语法会被编译成`selectnbsend`函数，同样也是调用`chansend`函数，但不同的是传入的`block`字段是true，即非阻塞的，因为select要立刻判断，如果不能发送就下一个。
+
+```go
+//	select {
+//	case c <- v:
+//		... foo
+//	default:
+//		... bar
+//	}
+//
+// as
+//
+//	if selectnbsend(c, v) {
+//		... foo
+//	} else {
+//		... bar
+//	}
+//
+func selectnbsend(c *hchan, elem unsafe.Pointer) (selected bool) {
+	return chansend(c, elem, false, getcallerpc())
+}
+```
+
 
 
 #### chansend函数
@@ -333,9 +356,8 @@ chansend大致流程：
 
 
 ```go
-// block参数为true表示在发送时是阻塞的，
-// 应该就是同步和异步两种模式，但目前都是同步阻塞的
-// 异步的就是如果不能发送成功（放到缓冲区）就返回false了，等待下次发送
+// block参数为true表示在发送时是阻塞的，即如果不能发送是否需要阻塞等待，
+// 只有在select时才会被编译成block为true的情况。
 // 返回值true表示发送成功，false为发送失败
 func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
     // 向一个未初始化的chan发送
@@ -537,6 +559,30 @@ func chanrecv2(c *hchan, elem unsafe.Pointer) (received bool) {
 ```
 
 无论`chanrecv1`还是`chanrecv2`，都是调用 `chanrecv`方法
+
+而在`select`下使用的会被编译成`selectnbrecv`函数，同样内部调用`chanrecv`方法，也是block为true的区别：
+
+```go
+//	select {
+//	case v = <-c:
+//		... foo
+//	default:
+//		... bar
+//	}
+//
+// as
+//
+//	if selectnbrecv(&v, c) {
+//		... foo
+//	} else {
+//		... bar
+//	}
+//
+func selectnbrecv(elem unsafe.Pointer, c *hchan) (selected bool) {
+	selected, _ = chanrecv(c, elem, false)
+	return
+}
+```
 
 
 
@@ -778,6 +824,92 @@ func recv(c *hchan, sg *sudog, ep unsafe.Pointer, unlockf func(), skip int) {
 
 
 ### close
+
+`close(ch)`语法会被编译成`closechan`函数
+
+#### closechan函数
+
+`runtime.closechan`函数：
+
+1.  判断为nil，panic：`close of nil channel`
+2.  加锁
+3.  判断是否已关闭，是则解锁并panic：`close of closed channel`
+4.  设置`closed=1`已关闭
+5.  循环，将所有等待的接收者放入需要释放的队列gList
+6.  循环，将所有等待的发送者放入gList（这里被唤醒的发送者会panic）
+7.  解锁
+8.  将gList中所有阻塞的goroutine唤醒
+
+
+
+源码：
+
+```go
+func closechan(c *hchan) {
+	if c == nil {
+		panic(plainError("close of nil channel"))
+	}
+
+	lock(&c.lock)
+	if c.closed != 0 {
+		unlock(&c.lock)
+		panic(plainError("close of closed channel"))
+	}
+
+    // ...
+
+	c.closed = 1
+
+    // 需要唤醒的goroutine序列
+	var glist gList
+
+    // 释放所有等待的接收者
+	for {
+		sg := c.recvq.dequeue()
+		if sg == nil {
+			break
+		}
+		if sg.elem != nil {
+			typedmemclr(c.elemtype, sg.elem)
+			sg.elem = nil
+		}
+		if sg.releasetime != 0 {
+			sg.releasetime = cputicks()
+		}
+		gp := sg.g
+		gp.param = nil
+		// ...
+		glist.push(gp)
+	}
+
+    // 释放所有等待的发送者，它们会panic
+	for {
+		sg := c.sendq.dequeue()
+		if sg == nil {
+			break
+		}
+		sg.elem = nil
+		if sg.releasetime != 0 {
+			sg.releasetime = cputicks()
+		}
+		gp := sg.g
+		gp.param = nil
+		// ...
+		glist.push(gp)
+	}
+	unlock(&c.lock)
+
+	// Ready all Gs now that we've dropped the channel lock.
+    // 将所有等待的goroutine唤醒，从Gwaiting->Grunning
+	for !glist.empty() {
+		gp := glist.pop()
+		gp.schedlink = 0
+		goready(gp, 3)
+	}
+}
+```
+
+
 
 
 
