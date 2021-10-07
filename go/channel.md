@@ -220,6 +220,8 @@ const (
 
 创建并初始化一个channel，使用的是`makechan`和`makechan64`方法，后者是为了应对缓冲区大小大于2\^64的情况（毕竟存储元素数量的类型是uint，最大是2\^64个），但在代码中有点迷，没明白啥意思……
 
+#### makechan函数
+
 主要是`makechan`这个函数（不同版本会有差异）：
 
 ```go
@@ -294,6 +296,10 @@ func chansend1(c *hchan, elem unsafe.Pointer) {
     chansend(c, elem, true, getcallerpc())
 }
 ```
+
+
+
+#### chansend函数
 
 chansend 大致可以根据不同情况分为以下三部分：
 
@@ -462,7 +468,7 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 }
 ```
 
-
+#### send函数
 
 向一个空缓冲区的channel发送会调用`runtime.send`函数：
 
@@ -512,7 +518,262 @@ TO DO：goparkunlock 挂起做了什么？
 
 ### receive
 
+从channel接收数据有三个写法：
 
+-   `<-c`：被编译成 `chanrecv1`函数
+-   `x <- c`：被编译成 `chanrecv1`函数
+-   `x, ok <- c`：同样被编译成 `chanrecv2`函数
+
+```go
+// entry points for <- c from compiled code
+func chanrecv1(c *hchan, elem unsafe.Pointer) {
+	chanrecv(c, elem, true)
+}
+
+func chanrecv2(c *hchan, elem unsafe.Pointer) (received bool) {
+	_, received = chanrecv(c, elem, true)
+	return
+}
+```
+
+无论`chanrecv1`还是`chanrecv2`，都是调用 `chanrecv`方法
+
+
+
+#### chanrecv函数
+
+chanrecv方法也可以根据情况大致分为四个部分：
+
+1.  channel关闭
+2.  直接接收：存在等待的发送者；
+3.  缓冲区有数据接收：缓冲区不为空，从缓冲区队头拷贝数据；
+4.  阻塞接收：缓冲区为空且无发送者，挂起阻塞等待唤醒。
+
+
+
+chanrecv流程：
+
+1.  判断chan是否为nil，为nil则挂起阻塞；
+2.  加锁
+3.  是否被关闭了且缓冲区无数据：
+    1.  解锁，将接受变量置零值
+    2.  返回true, false
+4.  是否存在接收者
+    1.  调用`runtime.recv`方法直接从接受者获取数据
+    2.  返回true, true
+5.  缓冲区是否存在数据
+    1.  从队列头部获取数据
+    2.  若接收变量不为nil，则拷贝数据到该地址空间上，否则忽略
+    3.  返回true, true
+6.  阻塞接收流程：
+    1.  获取goroutine和sudog，设置一些参数
+    2.  将goroutine放入channel的等待接收队列
+    3.  挂起goroutine
+    4.  被唤醒后进行一些收尾工作，重置goroutine的一些字段，释放sudog结构
+    5.  判断返回值closed
+    6.  返回true, !closed
+
+
+
+```go
+// eq：等待接收的数据地址，
+//   - 对于形如<-c情况，eq为nil，直接忽略接收的数据
+//   - eq不为nil，则必须指向堆或调用栈（也就是说逃逸分析会把接收的变量放到堆上？）
+// block：和send一样，表示是否阻塞的意思，只有在select时会用到false
+// 返回值selected表示是否被选择上了/接收到了数据，chan关闭也为true，用于select选择语法
+// 返回值received表示是否成功接收到了有效数据，若chan关闭则返回false
+func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool) {
+    // ...
+
+	if c == nil {
+		if !block {
+			return
+		}
+		gopark(nil, nil, waitReasonChanReceiveNilChan, traceEvGoStop, 2)
+		throw("unreachable")
+	}
+
+    // 非阻塞模式下迅速判断能否接收到数据，无需加锁
+    // 一堆注释……
+	if !block && (c.dataqsiz == 0 && c.sendq.first == nil ||
+		c.dataqsiz > 0 && atomic.Loaduint(&c.qcount) == 0) &&
+		atomic.Load(&c.closed) == 0 {
+		return
+	}
+
+    // 干什么用的？？……
+	var t0 int64
+	if blockprofilerate > 0 {
+		t0 = cputicks()
+	}
+
+	lock(&c.lock)
+
+    // 如果chan被关闭且无数据在缓冲区中，
+    // 那么会解锁，并清除ep指针中的数据并返回（也就是将ep设为零值返回false）
+	if c.closed != 0 && c.qcount == 0 {
+        // ...
+		unlock(&c.lock)
+		if ep != nil {
+			typedmemclr(c.elemtype, ep)
+		}
+		return true, false
+	}
+    
+    // ------------
+    // 直接发送
+    // ------------
+
+    // 如果存在等待的发送者，则直接从发送者中接收数据
+	if sg := c.sendq.dequeue(); sg != nil {
+		// Found a waiting sender. If buffer is size 0, receive value
+		// directly from sender. Otherwise, receive from head of queue
+		// and add sender's value to the tail of the queue (both map to
+		// the same buffer slot because the queue is full).
+		recv(c, sg, ep, func() { unlock(&c.lock) }, 3)
+		return true, true
+	}
+    
+    // -------------
+    // 缓冲区接收数据
+    // -------------
+
+    // 缓冲区存在数据
+	if c.qcount > 0 {
+        // 直接从队列头部获取数据
+		qp := chanbuf(c, c.recvx)
+		// ...
+        // 若ep不为nil，则将数据qp拷贝到ep的地址空间上，否则忽略
+		if ep != nil {
+			typedmemmove(c.elemtype, ep, qp)
+		}
+        // 清除qp的数据
+		typedmemclr(c.elemtype, qp)
+        // 更新hchan的一些元数据
+		c.recvx++
+		if c.recvx == c.dataqsiz {
+			c.recvx = 0
+		}
+		c.qcount--
+		unlock(&c.lock)
+		return true, true
+	}
+    
+    // ------------
+    // 阻塞接收
+    // ------------
+
+	if !block {
+		unlock(&c.lock)
+		return false, false
+	}
+
+	// no sender available: block on this channel.
+	gp := getg() // 获取goroutine
+	mysg := acquireSudog() // 获取sudog结构体
+    // to do：？？
+	mysg.releasetime = 0
+	if t0 != 0 {
+		mysg.releasetime = -1
+	}
+	// No stack splits between assigning elem and enqueuing mysg
+	// on gp.waiting where copystack can find it.
+	mysg.elem = ep
+	mysg.waitlink = nil
+	gp.waiting = mysg
+	mysg.g = gp
+	mysg.isSelect = false
+	mysg.c = c
+	gp.param = nil
+	c.recvq.enqueue(mysg)
+	gopark(chanparkcommit, unsafe.Pointer(&c.lock), waitReasonChanReceive, traceEvGoBlockRecv, 2)
+
+	// someone woke us up
+	if mysg != gp.waiting {
+		throw("G waiting list is corrupted")
+	}
+	gp.waiting = nil
+	gp.activeStackChans = false
+	if mysg.releasetime > 0 {
+		blockevent(mysg.releasetime-t0, 2)
+	}
+    // chan是否关闭，根据goroutine的param字段判断，
+    // todo：前面设置为nil，这里是恒定nil吗？
+	closed := gp.param == nil
+	gp.param = nil
+	mysg.c = nil
+	releaseSudog(mysg)
+	return true, !closed
+}
+```
+
+
+
+#### recv函数
+
+直接发送操作、对一个无缓冲区或满缓冲区的channel接收操作会调用`runtime.recv`方法：
+
+1.  判断channel类型：
+
+    -   如果是无缓冲区的 channel：
+        -   调用 `runtime.recvDirect` 将 channel 发送队列中 Goroutine 存储的要发送的数据 elem 拷贝到要接收方的目标内存地址 ep 中；
+
+    -   如果 channel 存在缓冲区：
+        1.  将缓冲区队头的数据拷贝到接收方的内存地址；
+        2.  将发送队列头goroutine的发送数据拷贝到缓冲区队尾中。
+
+2.  运行时调用 `runtime.goready` 将当前处理器的 `runnext` 设置成发送数据的 Goroutine，在调度器下一次调度时将阻塞的发送方唤醒。
+
+
+
+源码：
+
+```go
+// recv函数用于对一个满缓冲区的channel实行接收操作。
+// 分为两部分：
+// 1) 发送方将发送的数据被放入channel，同时这个发送方被唤醒继续执行；
+// 2) 接收方要将接收的数据写入ep（接收的变量内存地址中）。
+// 对于同步的channel（无缓冲），以上两部分的数据都是一样的；
+// 对于异步的channel（有缓冲），接收方从缓冲区队头获取数据，同时发送方将发送的数据放入缓冲区队尾。
+// channel 必须是满的且是上锁的，要唤醒的发送方必须已经进入channel的等待发送队列
+// 非空的 ep 必须指向堆或某个调用栈
+// skip？？
+func recv(c *hchan, sg *sudog, ep unsafe.Pointer, unlockf func(), skip int) {
+	if c.dataqsiz == 0 {
+        // 如果是无缓冲区的channel，直接从发送方拷贝数据到接收方的内存地址中
+		if ep != nil {
+			// copy data from sender
+			recvDirect(c.elemtype, sg, ep)
+		}
+	} else {
+        // 如果是有缓冲区的channel，此时缓冲区队列已满，从队头获取要接收的数据，
+        // 再将阻塞的发送方唤醒，将要发送的数据放入队尾，
+        // 因为队列是满的，所以两者的位置相同。
+		qp := chanbuf(c, c.recvx)
+		// ...
+        // 拷贝数据到发送方的内存地址中
+		if ep != nil {
+			typedmemmove(c.elemtype, ep, qp)
+		}
+        // 拷贝发送方的数据到相同的缓冲区位置中
+		typedmemmove(c.elemtype, qp, sg.elem)
+		c.recvx++
+		if c.recvx == c.dataqsiz {
+			c.recvx = 0
+		}
+		c.sendx = c.recvx // c.sendx = (c.sendx+1) % c.dataqsiz
+	}
+    // 无论哪种情况，发送方都已经成功发送数据了，所以设置下发送方，并将其唤醒
+	sg.elem = nil
+	gp := sg.g
+	unlockf()
+	gp.param = unsafe.Pointer(sg)
+	if sg.releasetime != 0 {
+		sg.releasetime = cputicks()
+	}
+	goready(gp, skip+1)
+}
+```
 
 
 
