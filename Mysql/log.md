@@ -1,22 +1,13 @@
-## 日志系列
+# 日志系列
 
-### redo log
+## redo log
 
+## undo log
 
+## binary log
 
-### undo log
+## relay log
 
+## Ref
 
-
-### binary log
-
-
-
-### relay log
-
-
-
-### Ref
-
-+   [[详细分析MySQL事务日志(redo log和undo log)](https://www.cnblogs.com/f-ck-need-u/p/9010872.html)](https://www.cnblogs.com/f-ck-need-u/p/9010872.html)
-
++ [[详细分析MySQL事务日志(redo log和undo log)](https://www.cnblogs.com/f-ck-need-u/p/9010872.html)](<https://www.cnblogs.com/f-ck-need-u/p/9010872.html>)
